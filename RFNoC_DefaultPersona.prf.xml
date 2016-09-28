@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties PUBLIC "-//JTRS//DTD SCA V2.2.2 PRF//EN" "properties.dtd">
+<properties>
+  <simple id="DCE:cdc5ee18-7ceb-4ae6-bf4c-31f983179b4d" mode="readonly" name="device_kind" type="string">
+    <description>This specifies the device kind</description>
+    <value>PERSONA</value>
+    <kind kindtype="allocation"/>
+    <action type="eq"/>
+  </simple>
+  <simple id="DCE:0f99b2e4-9903-4631-9846-ff349d18ecfb" mode="readonly" name="device_model" type="string">
+    <description> This specifies the specific device</description>
+    <value>DEFAULT</value>
+    <kind kindtype="allocation"/>
+    <action type="eq"/>
+  </simple>
+  <struct id="hw_load_status" mode="readonly">
+    <simple id="hw_load_status::hardware_id" name="hardware_id" type="string"/>
+    <simple id="hw_load_status::load_filepath" name="load_filepath" type="string"/>
+    <simple id="hw_load_status::request_id" name="request_id" type="string"/>
+    <simple id="hw_load_status::requester_id" name="requester_id" type="string"/>
+    <simple id="hw_load_status::state" name="state" type="ushort">
+      <enumerations>
+        <enumeration label="INACTIVE" value="0"/>
+        <enumeration label="ACTIVE" value="1"/>
+        <enumeration label="PENDING" value="2"/>
+        <enumeration label="ERRORED" value="3"/>
+      </enumerations>
+    </simple>
+  </struct>
+</properties>

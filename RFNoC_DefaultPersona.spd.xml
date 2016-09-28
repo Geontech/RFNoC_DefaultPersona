@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
+<softpkg id="DCE:6069af30-a77a-44ad-b8f0-781d7b0a1678" name="RFNoC_DefaultPersona" type="2.0.2">
+  <title></title>
+  <author>
+    <name>null</name>
+  </author>
+  <propertyfile type="PRF">
+    <localfile name="RFNoC_DefaultPersona.prf.xml"/>
+  </propertyfile>
+  <descriptor>
+    <localfile name="RFNoC_DefaultPersona.scd.xml"/>
+  </descriptor>
+  <implementation id="cpp_armv7l">
+    <description>The implementation contains descriptive information about the template for a software component.</description>
+    <code type="SharedLibrary">
+      <localfile name="cpp_armv7l/.libs/libRFNoC_DefaultPersona.so"/>
+      <entrypoint>cpp_armv7l/.libs/libRFNoC_DefaultPersona.so</entrypoint>
+    </code>
+    <compiler name="/usr/bin/gcc" version="4.4.7"/>
+    <programminglanguage name="C++"/>
+    <humanlanguage name="EN"/>
+    <os name="Linux"/>
+    <processor name="armv7l"/>
+  </implementation>
+</softpkg>

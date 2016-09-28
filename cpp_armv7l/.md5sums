@@ -1,0 +1,13 @@
+e4f693c8ac6b2111aedf0bfa8766c707  main.cpp
+24a786e66bf3b1ef2e076127f5e4d135  RFNoC_DefaultPersona_persona_base.cpp
+5beeb3f0e4920778c7f3cdac6546be9f  RFNoC_DefaultPersona_base.h
+941e8a6ce71357e04b9e6c52d61b9717  RFNoC_DefaultPersona_persona_base.h
+8bfcd22353c3a57fee561ad86ee2a56b  reconf
+bbe97b77d109f961b6e9df3f1dec6d6e  RFNoC_DefaultPersona.h
+e4303ed9e64381a4f44655ea1d28bcca  RFNoC_DefaultPersona.cpp
+876a9bc802f33e5f5d4ddd6aeddb4e82  RFNoC_DefaultPersona_base.cpp
+ac85e80f74d21f35483fa1d82a6bdb96  Makefile.am
+8c7fa0dfb7ebc2c5011731310d71ad92  struct_props.h
+13b3468e89213b4d8e2f9cfdf4e08a7c  Makefile.am.ide
+b87651ea3565402473fb088004430fbf  build.sh
+c3b19b73dba2a03df7a18d7061df80c6  configure.ac
