@@ -13,6 +13,24 @@
     <kind kindtype="allocation"/>
     <action type="eq"/>
   </simple>
+  <simple id="DCE:9B445600-6C7F-11d4-A226-0050DA314CD6" mode="readonly" name="processor_name" type="string">
+    <description>SCA required property describing the CPU type</description>
+    <value>RF-NoC-Default</value>
+    <kind kindtype="allocation"/>
+    <action type="eq"/>
+  </simple>
+  <simple id="DCE:80BF17F0-6C7F-11d4-A226-0050DA314CD6" mode="readonly" name="os_name" type="string">
+    <description>SCA required property describing the Operating System Name</description>
+    <value>Linux</value>
+    <kind kindtype="allocation"/>
+    <action type="eq"/>
+  </simple>
+  <simple id="DCE:0f3a9a37-a342-43d8-9b7f-78dc6da74192" mode="readonly" name="os_version" type="string">
+    <description>SCA required property describing the Operating System Version</description>
+    <value>3.14.2-xilinx</value>
+    <kind kindtype="allocation"/>
+    <action type="eq"/>
+  </simple>
   <struct id="hw_load_status" mode="readonly">
     <simple id="hw_load_status::hardware_id" name="hardware_id" type="string"/>
     <simple id="hw_load_status::load_filepath" name="load_filepath" type="string"/>

@@ -32,6 +32,12 @@ class RFNoC_DefaultPersona_base : public Device_impl, public virtual POA_CF::Agg
         std::string device_kind;
         /// Property: device_model
         std::string device_model;
+        /// Property: processor_name
+        std::string processor_name;
+        /// Property: os_name
+        std::string os_name;
+        /// Property: os_version
+        std::string os_version;
         /// Property: hw_load_status
         hw_load_status_struct hw_load_status;
 

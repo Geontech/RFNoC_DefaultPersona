@@ -102,6 +102,33 @@ void RFNoC_DefaultPersona_base::loadProperties()
                 "eq",
                 "allocation");
 
+    addProperty(processor_name,
+                "RF-NoC-Default",
+                "DCE:9B445600-6C7F-11d4-A226-0050DA314CD6",
+                "processor_name",
+                "readonly",
+                "",
+                "eq",
+                "allocation");
+
+    addProperty(os_name,
+                "Linux",
+                "DCE:80BF17F0-6C7F-11d4-A226-0050DA314CD6",
+                "os_name",
+                "readonly",
+                "",
+                "eq",
+                "allocation");
+
+    addProperty(os_version,
+                "3.14.2-xilinx",
+                "DCE:0f3a9a37-a342-43d8-9b7f-78dc6da74192",
+                "os_version",
+                "readonly",
+                "",
+                "eq",
+                "allocation");
+
     addProperty(hw_load_status,
                 hw_load_status_struct(),
                 "hw_load_status",

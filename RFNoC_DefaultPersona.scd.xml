@@ -2,9 +2,11 @@
 <!DOCTYPE softwarecomponent PUBLIC "-//JTRS//DTD SCA V2.2.2 SCD//EN" "softwarecomponent.dtd">
 <softwarecomponent>
   <corbaversion>2.2</corbaversion>
-  <componentrepid repid="IDL:CF/Device:1.0"/>
+  <componentrepid repid="IDL:CF/ExecutableDevice:1.0"/>
   <componenttype>device</componenttype>
   <componentfeatures>
+    <supportsinterface repid="IDL:CF/ExecutableDevice:1.0" supportsname="ExecutableDevice"/>
+    <supportsinterface repid="IDL:CF/LoadableDevice:1.0" supportsname="LoadableDevice"/>
     <supportsinterface repid="IDL:CF/Device:1.0" supportsname="Device"/>
     <supportsinterface repid="IDL:CF/AggregateDevice:1.0" supportsname="AggregateDevice"/>
     <supportsinterface repid="IDL:CF/Resource:1.0" supportsname="Resource"/>
@@ -19,6 +21,12 @@
     <ports/>
   </componentfeatures>
   <interfaces>
+    <interface name="ExecutableDevice" repid="IDL:CF/ExecutableDevice:1.0">
+      <inheritsinterface repid="IDL:CF/LoadableDevice:1.0"/>
+    </interface>
+    <interface name="LoadableDevice" repid="IDL:CF/LoadableDevice:1.0">
+      <inheritsinterface repid="IDL:CF/Device:1.0"/>
+    </interface>
     <interface name="Device" repid="IDL:CF/Device:1.0">
       <inheritsinterface repid="IDL:CF/Resource:1.0"/>
     </interface>
