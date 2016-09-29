@@ -3,6 +3,16 @@
 
 #include "RFNoC_DefaultPersona_base.h"
 #include "ossie/Device_impl.h"
+#include "ossie/ExecutableDevice_impl.h"
+#include "ossie/prop_helpers.h"
+#include "entry_point.h"
+#include <dlfcn.h>
+
+typedef std::string ResourceId;
+typedef std::map<ResourceId, Resource_impl*> ResourceMap;
+typedef ResourceMap::iterator ResourceMapIter;
+typedef std::map<unsigned int, ResourceId> ProcessMap;
+typedef ProcessMap::iterator ProcessMapIter;
 class RFNoC_DefaultPersona_persona_base;
 
 class RFNoC_DefaultPersona_persona_base : public RFNoC_DefaultPersona_base
@@ -18,6 +28,12 @@ class RFNoC_DefaultPersona_persona_base : public RFNoC_DefaultPersona_base
         virtual Device_impl* getParentDevice() { return _parentDevice; };
         virtual void adminState(CF::Device::AdminType adminState) 
             throw (CORBA::SystemException);
+        virtual CF::ExecutableDevice::ProcessID_Type execute (const char* name, const CF::Properties& options, const CF::Properties& parameters)
+            throw ( CF::ExecutableDevice::ExecuteFail, CF::InvalidFileName, CF::ExecutableDevice::InvalidOptions, 
+                    CF::ExecutableDevice::InvalidParameters, CF::ExecutableDevice::InvalidFunction, CF::Device::InvalidState, 
+                    CORBA::SystemException);
+        virtual void terminate (CF::ExecutableDevice::ProcessID_Type processId) 
+            throw ( CF::Device::InvalidState, CF::ExecutableDevice::InvalidProcess, CORBA::SystemException);
         virtual void releaseObject() 
             throw (CF::LifeCycle::ReleaseError, CORBA::SystemException);
 
@@ -35,10 +51,17 @@ class RFNoC_DefaultPersona_persona_base : public RFNoC_DefaultPersona_base
         virtual void afterHardwareProgramFailure() {};
         virtual void beforeHardwareUnprogrammed() {};
         virtual void afterHardwareUnprogrammed() {};
+        virtual bool hasRunningResources();
+        virtual Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)=0;
     private:
         Device_impl*            _parentDevice;
         bool                    _parentAllocated;
         CF::Properties          _previousRequestProps;
+        ResourceMap             _resourceMap;
+        ProcessMap              _processMap;
+        unsigned int            _processIdIncrement;
+
+        Resource_impl* instantiateResource(const char* libraryName, const CF::Properties& options, const CF::Properties& parameters);
         virtual void formatRequestProps(const CF::Properties& requestProps, CF::Properties& formattedProps);
 };
 

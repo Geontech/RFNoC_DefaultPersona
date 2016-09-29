@@ -27,6 +27,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
 
     protected:
+        Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
         void hwLoadRequest(CF::Properties& request);
 };
 

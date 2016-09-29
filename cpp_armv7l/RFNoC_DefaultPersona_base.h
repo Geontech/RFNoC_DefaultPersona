@@ -2,14 +2,14 @@
 #define RFNOC_DEFAULTPERSONA_BASE_IMPL_BASE_H
 
 #include <boost/thread.hpp>
-#include <ossie/Device_impl.h>
+#include <ossie/ExecutableDevice_impl.h>
 #include <CF/AggregateDevices.h>
 #include <ossie/AggregateDevice_impl.h>
 #include <ossie/ThreadedComponent.h>
 
 #include "struct_props.h"
 
-class RFNoC_DefaultPersona_base : public Device_impl, public virtual POA_CF::AggregatePlainDevice, public AggregateDevice_impl, protected ThreadedComponent
+class RFNoC_DefaultPersona_base : public ExecutableDevice_impl, public virtual POA_CF::AggregateExecutableDevice, public AggregateDevice_impl, protected ThreadedComponent
 {
     public:
         RFNoC_DefaultPersona_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl);

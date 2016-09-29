@@ -12,4 +12,5 @@ redhawk_SOURCES_auto += RFNoC_DefaultPersona_persona_base.cpp
 redhawk_SOURCES_auto += RFNoC_DefaultPersona_persona_base.h
 redhawk_SOURCES_auto += main.cpp
 redhawk_SOURCES_auto += struct_props.h
+redhawk_SOURCES_auto += entry_point.h
 redhawk_INCLUDES_auto = -I/home/Patrick/git/uhd/host

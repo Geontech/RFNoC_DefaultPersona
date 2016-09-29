@@ -68,6 +68,7 @@ void RFNoC_DefaultPersona_persona_base::construct()
     // Initialize state to safe defaults
     _parentDevice = NULL;
     _parentAllocated = false;
+    _processIdIncrement = 0;
 }
 
 // TODO: This was overriden since setting admin state is not accessible via the current IDL
@@ -95,6 +96,11 @@ void RFNoC_DefaultPersona_persona_base::releaseObject()
         CF::LifeCycle::ReleaseError, 
         CORBA::SystemException ) 
 {
+    // Terminate all children that were executed
+    ProcessMapIter iter;
+    for (iter = _processMap.begin(); iter != _processMap.end(); iter++) {
+        this->terminate(iter->first);
+    }
     RFNoC_DefaultPersona_base::releaseObject();
 }
 
@@ -158,6 +164,166 @@ CORBA::Boolean RFNoC_DefaultPersona_persona_base::attemptToUnprogramParent()
     return !_parentAllocated;
 }
 
+CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_persona_base::execute (
+                        const char*                 name, 
+                        const CF::Properties&       options, 
+                        const CF::Properties&       parameters )
+    throw ( 
+        CF::ExecutableDevice::ExecuteFail, 
+        CF::InvalidFileName, 
+        CF::ExecutableDevice::InvalidOptions, 
+        CF::ExecutableDevice::InvalidParameters,
+        CF::ExecutableDevice::InvalidFunction, 
+        CF::Device::InvalidState, 
+        CORBA::SystemException ) 
+{
+    // Initialize local variables
+    std::string propId;
+    std::string propValue;
+    std::string resourceId;
+    Resource_impl* resourcePtr = NULL;
+    
+    // Iterate through all parameters for debugging purposes
+    for (unsigned int ii = 0; ii < parameters.length(); ii++) {
+        propId = parameters[ii].id;
+        propValue = ossie::any_to_string(parameters[ii].value);
+        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, __FUNCTION__ << 
+            ": InstantiateResourceProp: ID['" << propId << "'] = " << propValue);
+    }
+
+    // Attempt to create and verify the resource
+    resourcePtr = instantiateResource(name, options, parameters);
+    if (resourcePtr == NULL) {
+        LOG_FATAL(RFNoC_DefaultPersona_persona_base, __FUNCTION__ << 
+            ": Unable to instantiate '" << name << "'");
+        throw (CF::ExecutableDevice::ExecuteFail());
+    }
+
+    resourceId = ossie::corba::returnString(resourcePtr->identifier());
+    _resourceMap[resourceId] = resourcePtr;                 // Store the resourcePtr
+    _processMap[++_processIdIncrement] = resourceId;        // Store the resourcePtr Process for termination
+    //_deviceManager->registerDevice(resourcePtr->_this());
+
+    return (CORBA::Long) _processIdIncrement;
+}
+
+void RFNoC_DefaultPersona_persona_base::terminate(CF::ExecutableDevice::ProcessID_Type processId)
+    throw (
+        CF::Device::InvalidState, 
+        CF::ExecutableDevice::InvalidProcess, 
+        CORBA::SystemException ) 
+{
+    // Initialize local variables
+    ProcessMapIter processIter;
+    ResourceMapIter resourceIter;
+    ResourceId resourceId;
+
+    // Search for the resourceId that's related to the incoming terminate request
+    processIter = _processMap.find(processId);
+    if (processIter != _processMap.end()) {
+
+        /// Search for the persona that related to the found resourceId
+        resourceIter = _resourceMap.find(processIter->second);
+        if (resourceIter != _resourceMap.end()) {
+            _processMap.erase(processIter);
+            _resourceMap.erase(resourceIter);
+
+            // We don't need to call releaseObject here since HW Components will
+            // be released by the application factory
+            delete resourceIter->second;
+
+            return;
+        }
+    }
+}
+
+bool RFNoC_DefaultPersona_persona_base::hasRunningResources() 
+{
+    return (!_resourceMap.empty());
+}
+
+Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
+                        const char*                 libraryName, 
+                        const CF::Properties&       options, 
+                        const CF::Properties&       parameters) 
+{
+    // Initialize local variables
+    std::string absPath = get_current_dir_name();
+    void* pHandle = NULL;
+    char* errorMsg = NULL;
+    CF::Properties combinedProps;
+    unsigned int skipRunInd = 0;
+   
+    std::string propId;
+    std::string propValue;
+
+    const char* symbol = "construct";
+    void* fnPtr = NULL; 
+    unsigned long argc = 0;
+    unsigned int argCounter = 0;
+    
+    ConstructorPtr constructorPtr = NULL;
+    Resource_impl* resourcePtr = NULL;
+
+
+    // Open up the cached .so file
+    absPath.append(libraryName);
+    pHandle = dlopen(absPath.c_str(), RTLD_NOW);
+    if (!pHandle) {
+        errorMsg = dlerror();
+        LOG_FATAL(RFNoC_DefaultPersona_persona_base, __FUNCTION__ <<  
+                ": Unable to open library '" << absPath.c_str() << "': " << errorMsg);
+        return NULL;
+    }
+
+    // Add SKIP_FLAG to properties
+    combinedProps = parameters;
+    skipRunInd = combinedProps.length();
+    combinedProps.length(skipRunInd + 1);
+    combinedProps[skipRunInd].id = CORBA::string_dup("SKIP_RUN");
+    combinedProps[skipRunInd].value <<= true;
+
+    // Convert combined properties into ARGV/ARGC format
+    argc = combinedProps.length() * 2;
+    char* argv[argc];
+    for (unsigned int i = 0; i < combinedProps.length(); i++) {
+        propId = combinedProps[i].id;
+        propValue = ossie::any_to_string(combinedProps[i].value);
+
+        argv[argCounter] = (char*) malloc(propId.size() + 1);
+        strcpy(argv[argCounter++], propId.c_str());
+
+        argv[argCounter] = (char*) malloc(propValue.size() + 1);
+        strcpy(argv[argCounter++], propValue.c_str());
+    }
+
+    // Look for the 'construct' C-method
+    fnPtr = dlsym(pHandle, symbol);
+    if (!fnPtr) {
+        errorMsg = dlerror();
+        LOG_FATAL(RFNoC_DefaultPersona_persona_base, __FUNCTION__ << 
+            ": Unable to find symbol '" << symbol << "': " << errorMsg);
+        return NULL;
+    }
+
+    // Cast the symbol as a ConstructorPtr
+    constructorPtr = reinterpret_cast<ConstructorPtr>(fnPtr);
+    
+    // Attempt to instantiate the resource via the constructor pointer
+    try {
+        resourcePtr = generateResource(argc, argv, constructorPtr, libraryName);
+    } catch (...) {
+        LOG_FATAL(RFNoC_DefaultPersona_persona_base, __FUNCTION__ << 
+            ": Unable to construct persona device: '" << argv[0] << "'");
+    }
+
+    // Free the memory used to create argv
+    for (unsigned int i = 0; i < argCounter; i++) {
+        free(argv[i]);
+    }
+
+    return resourcePtr;
+}
 
 // Transforms user-supplied properties into safe-usable CF::Properties
 void RFNoC_DefaultPersona_persona_base::formatRequestProps(

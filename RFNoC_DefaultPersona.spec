@@ -13,9 +13,9 @@ Prefix:         %{_prefix}
 Name:           RFNoC_DefaultPersona
 Version:        1.0.0
 Release:        1%{?dist}
-Summary:        Device %{name}
+Summary:        ExecutableDevice %{name}
 
-Group:          REDHAWK/Devices
+Group:          REDHAWK/ExecutableDevices
 License:        None
 Source0:        %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -26,7 +26,7 @@ Requires:       redhawk >= 2.0
 
 
 %description
-Device %{name}
+ExecutableDevice %{name}
  * Commit: __REVISION__
  * Source Date/Time: __DATETIME__
 

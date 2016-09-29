@@ -11,7 +11,7 @@
 ******************************************************************************************/
 
 RFNoC_DefaultPersona_base::RFNoC_DefaultPersona_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl),
+    ExecutableDevice_impl(devMgr_ior, id, lbl, sftwrPrfl),
     AggregateDevice_impl(),
     ThreadedComponent()
 {
@@ -19,7 +19,7 @@ RFNoC_DefaultPersona_base::RFNoC_DefaultPersona_base(char *devMgr_ior, char *id,
 }
 
 RFNoC_DefaultPersona_base::RFNoC_DefaultPersona_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, compDev),
+    ExecutableDevice_impl(devMgr_ior, id, lbl, sftwrPrfl, compDev),
     AggregateDevice_impl(),
     ThreadedComponent()
 {
@@ -27,7 +27,7 @@ RFNoC_DefaultPersona_base::RFNoC_DefaultPersona_base(char *devMgr_ior, char *id,
 }
 
 RFNoC_DefaultPersona_base::RFNoC_DefaultPersona_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities),
+    ExecutableDevice_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities),
     AggregateDevice_impl(),
     ThreadedComponent()
 {
@@ -35,7 +35,7 @@ RFNoC_DefaultPersona_base::RFNoC_DefaultPersona_base(char *devMgr_ior, char *id,
 }
 
 RFNoC_DefaultPersona_base::RFNoC_DefaultPersona_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev),
+    ExecutableDevice_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev),
     AggregateDevice_impl(),
     ThreadedComponent()
 {
@@ -58,13 +58,13 @@ void RFNoC_DefaultPersona_base::construct()
 *******************************************************************************************/
 void RFNoC_DefaultPersona_base::start() throw (CORBA::SystemException, CF::Resource::StartError)
 {
-    Device_impl::start();
+    ExecutableDevice_impl::start();
     ThreadedComponent::startThread();
 }
 
 void RFNoC_DefaultPersona_base::stop() throw (CORBA::SystemException, CF::Resource::StopError)
 {
-    Device_impl::stop();
+    ExecutableDevice_impl::stop();
     if (!ThreadedComponent::stopThread()) {
         throw CF::Resource::StopError(CF::CF_NOTSET, "Processing thread did not die");
     }
@@ -79,7 +79,7 @@ void RFNoC_DefaultPersona_base::releaseObject() throw (CORBA::SystemException, C
         // TODO - this should probably be logged instead of ignored
     }
 
-    Device_impl::releaseObject();
+    ExecutableDevice_impl::releaseObject();
 }
 
 void RFNoC_DefaultPersona_base::loadProperties()

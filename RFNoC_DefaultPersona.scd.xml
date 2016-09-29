@@ -3,7 +3,7 @@
 <softwarecomponent>
   <corbaversion>2.2</corbaversion>
   <componentrepid repid="IDL:CF/ExecutableDevice:1.0"/>
-  <componenttype>device</componenttype>
+  <componenttype>executabledevice</componenttype>
   <componentfeatures>
     <supportsinterface repid="IDL:CF/ExecutableDevice:1.0" supportsname="ExecutableDevice"/>
     <supportsinterface repid="IDL:CF/LoadableDevice:1.0" supportsname="LoadableDevice"/>

@@ -273,6 +273,13 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
     LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 }
 
+Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
+{
+    Resource_impl *resource = fnptr(argc, argv, this);
+
+    return resource;
+}
+
 void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
 {
     hw_load_status_object hwLoadStatusObject;
