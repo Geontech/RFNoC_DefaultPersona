@@ -275,6 +275,10 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
+    LOG_INFO(RFNoC_DefaultPersona_i, "A");
+    LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_mboard_name());
+    LOG_INFO(RFNoC_DefaultPersona_i, "B");
+
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 
     return resource;
