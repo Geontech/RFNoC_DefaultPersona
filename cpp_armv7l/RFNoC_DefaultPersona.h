@@ -4,6 +4,8 @@
 #include "RFNoC_DefaultPersona_persona_base.h"
 #include "HwLoadStatus.h"
 
+#include <uhd/usrp/multi_usrp.hpp>
+
 class RFNoC_DefaultPersona_i;
 
 class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
@@ -25,10 +27,14 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
             throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CORBA::SystemException);
 
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
+        void setUsrp(uhd::usrp::multi_usrp::sptr usrp) { this->usrp = usrp; }
 
     protected:
         Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
         void hwLoadRequest(CF::Properties& request);
+
+    private:
+        uhd::usrp::multi_usrp::sptr usrp;
 };
 
 #endif // RFNOC_DEFAULTPERSONA_I_IMPL_H

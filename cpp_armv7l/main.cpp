@@ -3,6 +3,8 @@
 
 #include "RFNoC_DefaultPersona.h"
 
+#include <uhd/usrp/multi_usrp.hpp>
+
 RFNoC_DefaultPersona_i *devicePtr;
 
 void signal_catcher(int sig)
@@ -25,7 +27,7 @@ int main(int argc, char* argv[])
 }
 
 extern "C" {
-    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, hwLoadStatusCallback cb) {
+    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, hwLoadStatusCallback cb, uhd::usrp::multi_usrp::sptr usrp) {
 
         struct sigaction sa;
         sa.sa_handler = signal_catcher;
@@ -41,6 +43,7 @@ extern "C" {
         //         devicePtr->setSharedAPI(sharedAPI);
         devicePtr->setParentDevice(parentDevice);
         devicePtr->setHwLoadStatusCallback(cb);
+        devicePtr->setUsrp(usrp);
 
         return devicePtr;
     }
