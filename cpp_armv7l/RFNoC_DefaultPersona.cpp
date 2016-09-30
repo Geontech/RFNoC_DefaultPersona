@@ -273,6 +273,15 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
     LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 }
 
+void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
+{
+    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    this->usrp = usrp;
+
+    LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_pp_string());
+}
+
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
     LOG_INFO(RFNoC_DefaultPersona_i, "A");

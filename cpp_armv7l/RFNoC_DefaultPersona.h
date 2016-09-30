@@ -27,7 +27,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
             throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CORBA::SystemException);
 
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
-        void setUsrp(uhd::usrp::multi_usrp::sptr usrp) { this->usrp = usrp; }
+        void setUsrp(uhd::usrp::multi_usrp::sptr usrp);
 
     protected:
         Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
