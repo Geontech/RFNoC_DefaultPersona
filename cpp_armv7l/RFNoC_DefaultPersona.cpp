@@ -275,7 +275,7 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
-    Resource_impl *resource = fnptr(argc, argv, this);
+    Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 
     return resource;
 }
