@@ -283,7 +283,7 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
 
     if (this->usrp) {
         LOG_INFO(RFNoC_DefaultPersona_i, "Supposedly it's valid");
-        LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_pp_string());
+        //LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_pp_string());
     } else {
         LOG_INFO(RFNoC_DefaultPersona_i, "It is invalid");
         throw std::exception();
