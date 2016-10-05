@@ -279,7 +279,15 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
 
     this->usrp = usrp;
 
-    LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_pp_string());
+    LOG_INFO(RFNoC_DefaultPersona_i, "Set the usrp pointer");
+
+    if (this->usrp) {
+        LOG_INFO(RFNoC_DefaultPersona_i, "Supposedly it's valid");
+        LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_pp_string());
+    } else {
+        LOG_INFO(RFNoC_DefaultPersona_i, "It is invalid");
+        throw std::exception();
+    }
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
