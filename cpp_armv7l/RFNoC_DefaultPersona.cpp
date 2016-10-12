@@ -269,17 +269,27 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
     LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 }
 
-void RFNoC_DefaultPersona_i::traverseTree(const uhd::fs_path &path)
+std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, path);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    std::vector<std::string> NoCBlocks;
 
     uhd::property_tree::sptr tree = this->usrp->get_device3()->get_tree();
 
-    std::vector<std::string> atThisLevel = tree->list(path);
+    std::vector<std::string> xBarItems = tree->list("/mboards/0/xbar/");
 
-    for (size_t i = 0; i < atThisLevel.size(); ++i) {
-        traverseTree(path / atThisLevel[i]);
+    for (size_t i = 0; i < xBarItems.size(); ++i) {
+        uhd::fs_path xBarItem(xBarItems[i]);
+
+        LOG_INFO(RFNoC_DefaultPersona_i, xBarItem);
+
+        std::string NoCBlock = tree->access<std::string>(xBarItem / "noc_id").get();
+
+        NoCBlocks.push_back(NoCBlock);
     }
+
+    return NoCBlocks;
 }
 
 void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
@@ -288,7 +298,7 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
 
     this->usrp = usrp;
 
-    traverseTree("/");
+    std::vector<std::string> NoCBlocks = listNoCBlocks();
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
