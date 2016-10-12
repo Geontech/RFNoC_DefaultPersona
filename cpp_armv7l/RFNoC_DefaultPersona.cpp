@@ -232,11 +232,7 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
         return false;
     }
 
-
-    /*
-     * Do allocation work here...
-     */
-
+    allocationSuccess = true;
 
     if (allocationSuccess) {
         allocationSuccess = attemptToProgramParent();
@@ -273,28 +269,31 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
     LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 }
 
+void RFNoC_DefaultPersona_i::traverseTree(const uhd::fs_path &path)
+{
+    LOG_INFO(RFNoC_DefaultPersona_i, path);
+
+    uhd::property_tree::sptr tree = this->usrp->get_device3()->get_tree();
+
+    std::vector<std::string> atThisLevel = tree->list(path);
+
+    for (size_t i = 0; i < atThisLevel.size(); ++i) {
+        traverseTree(path / atThisLevel[i]);
+    }
+}
+
 void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
 {
     LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     this->usrp = usrp;
 
-    LOG_INFO(RFNoC_DefaultPersona_i, "Set the usrp pointer");
-
-    if (this->usrp) {
-        LOG_INFO(RFNoC_DefaultPersona_i, "Supposedly it's valid");
-        //LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_pp_string());
-    } else {
-        LOG_INFO(RFNoC_DefaultPersona_i, "It is invalid");
-        throw std::exception();
-    }
+    traverseTree("/");
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, "A");
     LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_mboard_name());
-    LOG_INFO(RFNoC_DefaultPersona_i, "B");
 
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 

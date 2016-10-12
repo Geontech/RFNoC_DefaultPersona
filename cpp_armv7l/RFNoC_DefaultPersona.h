@@ -34,6 +34,9 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void hwLoadRequest(CF::Properties& request);
 
     private:
+        void traverseTree(const uhd::fs_path &path);
+
+    private:
         uhd::usrp::multi_usrp::sptr usrp;
 };
 
