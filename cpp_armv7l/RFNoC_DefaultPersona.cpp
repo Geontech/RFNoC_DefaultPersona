@@ -280,22 +280,9 @@ std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
     std::vector<std::string> xBarItems = tree->list("/mboards/0/xbar/");
 
     for (size_t i = 0; i < xBarItems.size(); ++i) {
-        uhd::fs_path xBarItem(xBarItems[i]);
+        LOG_DEBUG(RFNoC_DefaultPersona_i, xBarItems[i]);
 
-        LOG_INFO(RFNoC_DefaultPersona_i, xBarItem);
-        uhd::fs_path NoCPath = xBarItem / "noc_id";
-        LOG_INFO(RFNoC_DefaultPersona_i, NoCPath);
-        uhd::rfnoc::block_id_t blockId;
-
-        try {
-            blockId = tree->access<uhd::rfnoc::block_id_t>(xBarItem / "noc_id").get();
-            LOG_INFO(RFNoC_DefaultPersona_i, "Got block_id");
-        } catch(...) {
-            LOG_ERROR(RFNoC_DefaultPersona_i, "Something bad happened...");
-            continue;
-        }
-
-        NoCBlocks.push_back(blockId.get());
+        NoCBlocks.push_back("0/" + xBarItems[i]);
     }
 
     return NoCBlocks;
