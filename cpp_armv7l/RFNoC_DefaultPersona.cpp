@@ -283,10 +283,19 @@ std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
         uhd::fs_path xBarItem(xBarItems[i]);
 
         LOG_INFO(RFNoC_DefaultPersona_i, xBarItem);
+        uhd::fs_path NoCPath = xBarItem / "noc_id";
+        LOG_INFO(RFNoC_DefaultPersona_i, NoCPath);
+        uhd::rfnoc::block_id_t blockId;
 
-        std::string NoCBlock = tree->access<std::string>(xBarItem / "noc_id").get();
+        try {
+            blockId = tree->access<uhd::rfnoc::block_id_t>(xBarItem / "noc_id").get();
+            LOG_INFO(RFNoC_DefaultPersona_i, "Got block_id");
+        } catch(...) {
+            LOG_ERROR(RFNoC_DefaultPersona_i, "Something bad happened...");
+            continue;
+        }
 
-        NoCBlocks.push_back(NoCBlock);
+        NoCBlocks.push_back(blockId.get());
     }
 
     return NoCBlocks;
