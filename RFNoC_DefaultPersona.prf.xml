@@ -44,5 +44,6 @@
         <enumeration label="ERRORED" value="3"/>
       </enumerations>
     </simple>
+    <configurationkind kindtype="property"/>
   </struct>
 </properties>

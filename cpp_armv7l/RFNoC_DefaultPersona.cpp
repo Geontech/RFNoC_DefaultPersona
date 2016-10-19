@@ -275,7 +275,7 @@ std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
 
     std::vector<std::string> NoCBlocks;
 
-    uhd::property_tree::sptr tree = this->usrp->get_device3()->get_tree();
+    uhd::property_tree::sptr tree = this->usrp->get_tree();
 
     std::vector<std::string> xBarItems = tree->list("/mboards/0/xbar/");
 
@@ -288,7 +288,7 @@ std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
     return NoCBlocks;
 }
 
-void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
+void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
 {
     LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
@@ -299,7 +299,7 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::usrp::multi_usrp::sptr usrp)
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_mboard_name());
+    //LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_mboard_name());
 
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 
