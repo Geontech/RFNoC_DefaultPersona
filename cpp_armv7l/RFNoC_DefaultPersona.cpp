@@ -299,7 +299,7 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
-    //LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_mboard_name());
+    LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_tree());
 
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 
