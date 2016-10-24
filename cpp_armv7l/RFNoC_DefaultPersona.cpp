@@ -226,9 +226,19 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
         LOG_INFO(RFNoC_DefaultPersona_i, resource->_identifier);
 
-        /*for (size_t i = 0; i < portSet->length(); ++i) {
-            LOG_INFO(RFNoC_DefaultPersona_i, portSet->operator [](i).);
-        }*/
+        for (size_t i = 0; i < portSet->length(); ++i) {
+            CF::PortSet::PortInfoType info = portSet->operator [](i);
+
+            LOG_INFO(RFNoC_DefaultPersona_i, "Port Name: " << info.name._ptr);
+            LOG_INFO(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
+            LOG_INFO(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
+
+            if (strstr(info.direction, "Uses") && strstr(info.repid, "BULKIO")) {
+                CF::Port_ptr port = CF::Port::_narrow(resource->getPort(portSet->operator [](i).name._ptr));
+
+
+            }
+        }
 
         CF::ConnectionManager_ptr cm = this->getDomainManager()->getRef()->connectionMgr();
 
@@ -237,7 +247,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         LOG_INFO(RFNoC_DefaultPersona_i, "Connections");
 
         for (size_t i = 0; i < connections->length(); ++i) {
-            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).requesterId._ptr);
+            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).connectionId);
             //LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).providesEndpoint.repositoryId._ptr);
         }
     }
