@@ -235,9 +235,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
             LOG_INFO(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
             LOG_INFO(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
 
-            if (strstr(info.direction, "Uses") && strstr(info.repid, "BULKIO")) {
-                CF::Port_ptr port = CF::Port::_narrow(resource->getPort(portSet->operator [](i).name._ptr));
-
+            if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
                 BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(portSet->operator [](i).name._ptr));
 
                 for (size_t j = 0; j < usesPort->connections()->length(); ++j) {
