@@ -227,7 +227,17 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         LOG_INFO(RFNoC_DefaultPersona_i, resource->_identifier);
 
         for (size_t i = 0; i < portSet->length(); ++i) {
-            LOG_INFO(RFNoC_DefaultPersona_i, portSet->operator [](i).name._ptr);
+            LOG_INFO(RFNoC_DefaultPersona_i, portSet->operator [](i).repid._ptr);
+        }
+
+        CF::ConnectionManager_ptr cm = this->getDomainManager()->getRef()->connectionMgr();
+
+        CF::ConnectionManager::ConnectionStatusSequence *connections = cm->connections();
+
+        LOG_INFO(RFNoC_DefaultPersona_i, "Connections");
+
+        for (size_t i = 0; i < connections->length(); ++i) {
+            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).providesEndpoint.repositoryId._ptr);
         }
     }
 
