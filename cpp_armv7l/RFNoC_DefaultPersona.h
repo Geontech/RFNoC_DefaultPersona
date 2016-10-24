@@ -44,7 +44,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::vector<std::string> listNoCBlocks();
 
     private:
-        std::map<CF::ExecutableDevice::ProcessID_Type, Resource_impl *> resourceMap;
+        std::map<const std::string, Resource_impl *> nameToResource;
+        std::map<CF::ExecutableDevice::ProcessID_Type, const std::string> pidToName;
         uhd::device3::sptr usrp;
 };
 

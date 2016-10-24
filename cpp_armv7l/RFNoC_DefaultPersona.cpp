@@ -262,9 +262,13 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
 
     CF::ExecutableDevice::ProcessID_Type pid = RFNoC_DefaultPersona_persona_base::execute(name, options, parameters);
 
-    LOG_INFO(RFNoC_DefaultPersona_i, pid);
+    for (size_t i = 0; i < parameters.length(); ++i) {
+        std::string id = parameters[i].id;
 
-    LOG_INFO(RFNoC_DefaultPersona_i, name);
+        LOG_INFO(RFNoC_DefaultPersona_i, id);
+    }
+
+    this->pidToName[pid] = std::string(name);
 
     return pid;
 }
@@ -327,9 +331,9 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
 {
     LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_tree());
 
-    LOG_INFO(RFNoC_DefaultPersona_i, libraryName);
-
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
+
+    //this->nameToResource[std::st]
 
     return resource;
 }
