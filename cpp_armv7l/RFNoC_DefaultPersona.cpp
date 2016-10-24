@@ -253,6 +253,32 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
     attemptToUnprogramParent();
 }
 
+CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char* name, const CF::Properties& options, const CF::Properties& parameters)
+    throw ( CF::ExecutableDevice::ExecuteFail, CF::InvalidFileName, CF::ExecutableDevice::InvalidOptions,
+            CF::ExecutableDevice::InvalidParameters, CF::ExecutableDevice::InvalidFunction, CF::Device::InvalidState,
+            CORBA::SystemException)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    CF::ExecutableDevice::ProcessID_Type pid = RFNoC_DefaultPersona_persona_base::execute(name, options, parameters);
+
+    LOG_INFO(RFNoC_DefaultPersona_i, pid);
+
+    LOG_INFO(RFNoC_DefaultPersona_i, name);
+
+    return pid;
+}
+
+void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type processId)
+                    throw ( CF::Device::InvalidState, CF::ExecutableDevice::InvalidProcess, CORBA::SystemException)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    RFNoC_DefaultPersona_persona_base::terminate(processId);
+
+    LOG_INFO(RFNoC_DefaultPersona_i, processId);
+}
+
 void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
 /*
     // Simple example of a single hw_load_request
@@ -300,6 +326,8 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
     LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_tree());
+
+    LOG_INFO(RFNoC_DefaultPersona_i, libraryName);
 
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 

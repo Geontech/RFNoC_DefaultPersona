@@ -26,6 +26,13 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void deallocateCapacity(const CF::Properties& capacities) 
             throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CORBA::SystemException);
 
+        CF::ExecutableDevice::ProcessID_Type execute (const char* name, const CF::Properties& options, const CF::Properties& parameters)
+            throw ( CF::ExecutableDevice::ExecuteFail, CF::InvalidFileName, CF::ExecutableDevice::InvalidOptions,
+                    CF::ExecutableDevice::InvalidParameters, CF::ExecutableDevice::InvalidFunction, CF::Device::InvalidState,
+                    CORBA::SystemException);
+        void terminate (CF::ExecutableDevice::ProcessID_Type processId)
+                    throw ( CF::Device::InvalidState, CF::ExecutableDevice::InvalidProcess, CORBA::SystemException);
+
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
         void setUsrp(uhd::device3::sptr usrp);
 
@@ -37,6 +44,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::vector<std::string> listNoCBlocks();
 
     private:
+        std::map<CF::ExecutableDevice::ProcessID_Type, Resource_impl *> resourceMap;
         uhd::device3::sptr usrp;
 };
 
