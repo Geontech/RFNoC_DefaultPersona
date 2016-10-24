@@ -55,6 +55,8 @@ void RFNoC_DefaultPersona_i::construct()
     this->hw_load_status.state = 0;
 
     LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << hw_load_status.hardware_id);
+
+    this->start();
 }
 
 /***********************************************************************************************
@@ -214,8 +216,21 @@ void RFNoC_DefaultPersona_i::construct()
 int RFNoC_DefaultPersona_i::serviceFunction()
 {
     LOG_DEBUG(RFNoC_DefaultPersona_i, "serviceFunction() example log message");
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     
+    boost::mutex::scoped_lock lock(this->resourceLock);
+
+    for (std::map<std::string, Resource_impl *>::iterator it = this->nameToResource.begin(); it != this->nameToResource.end(); it++) {
+        Resource_impl *resource = it->second;
+
+        CF::PortSet::PortInfoSequence *portSet = resource->getPortSet();
+
+        LOG_INFO(RFNoC_DefaultPersona_i, resource->_identifier);
+
+        for (size_t i = 0; i < portSet->length(); ++i) {
+            LOG_INFO(RFNoC_DefaultPersona_i, portSet->operator [](i).name._ptr);
+        }
+    }
+
     return NOOP;
 }
 
@@ -290,6 +305,8 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     this->pidToName.erase(processId);
 
+    boost::mutex::scoped_lock lock(this->resourceLock);
+
     this->nameToResource.erase(name);
 }
 
@@ -352,6 +369,8 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
             break;
         }
     }
+
+    boost::mutex::scoped_lock lock(this->resourceLock);
 
     this->nameToResource[componentIdentifier] = resource;
 

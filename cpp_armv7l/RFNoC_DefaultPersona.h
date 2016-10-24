@@ -46,6 +46,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
     private:
         std::map<std::string, Resource_impl *> nameToResource;
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToName;
+        boost::mutex resourceLock;
         uhd::device3::sptr usrp;
 };
 
