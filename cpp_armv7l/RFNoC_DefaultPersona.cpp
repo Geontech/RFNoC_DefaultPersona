@@ -263,7 +263,7 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
     CF::ExecutableDevice::ProcessID_Type pid = RFNoC_DefaultPersona_persona_base::execute(name, options, parameters);
 
     for (size_t i = 0; i < parameters.length(); ++i) {
-        std::string id = parameters[i].id;
+        std::string id = parameters[i].id._ptr;
 
         LOG_INFO(RFNoC_DefaultPersona_i, id);
     }
