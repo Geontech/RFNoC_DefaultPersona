@@ -262,13 +262,19 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
 
     CF::ExecutableDevice::ProcessID_Type pid = RFNoC_DefaultPersona_persona_base::execute(name, options, parameters);
 
+    std::string componentIdentifier = name;
+    componentIdentifier += ":";
+
     for (size_t i = 0; i < parameters.length(); ++i) {
         std::string id = parameters[i].id._ptr;
 
-        LOG_INFO(RFNoC_DefaultPersona_i, id);
+        if (componentIdentifier == "COMPONENT_IDENTIFIER") {
+            componentIdentifier += ossie::any_to_string(parameters[i].value);
+            break;
+        }
     }
 
-    this->pidToName[pid] = std::string(name);
+    this->pidToName[pid] = componentIdentifier;
 
     return pid;
 }
@@ -280,7 +286,11 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     RFNoC_DefaultPersona_persona_base::terminate(processId);
 
-    LOG_INFO(RFNoC_DefaultPersona_i, processId);
+    std::string name = this->pidToName[processId];
+
+    this->pidToName.erase(processId);
+
+    this->nameToResource.erase(name);
 }
 
 void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
@@ -333,7 +343,17 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
 
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 
-    //this->nameToResource[std::st]
+    std::string componentIdentifier = libraryName;
+    componentIdentifier += ":";
+
+    for (size_t i = 0; i < size_t(argc); i+=2) {
+        if (strcmp(argv[i], "COMPONENT_IDENTIFIER") == 0) {
+            componentIdentifier += argv[i+1];
+            break;
+        }
+    }
+
+    this->nameToResource[componentIdentifier] = resource;
 
     return resource;
 }
