@@ -9,6 +9,8 @@
 
 #include "RFNoC_DefaultPersona.h"
 
+#include <bulkio/BULKIO_Interfaces.h>
+
 PREPARE_LOGGING(RFNoC_DefaultPersona_i)
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
@@ -236,7 +238,13 @@ int RFNoC_DefaultPersona_i::serviceFunction()
             if (strstr(info.direction, "Uses") && strstr(info.repid, "BULKIO")) {
                 CF::Port_ptr port = CF::Port::_narrow(resource->getPort(portSet->operator [](i).name._ptr));
 
+                BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(portSet->operator [](i).name._ptr));
 
+                for (size_t j = 0; j < usesPort->connections()->length(); ++j) {
+                    ExtendedCF::UsesConnection connection = usesPort->connections()->operator [](j);
+
+                    LOG_INFO(RFNoC_DefaultPersona_i, connection.connectionId._ptr);
+                }
             }
         }
 
