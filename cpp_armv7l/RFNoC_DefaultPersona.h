@@ -55,8 +55,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
     private:
         std::map<CORBA::ULong, ResourceInfo *> hashToResourceInfo;
         std::map<std::pair<CORBA::ULong, std::string>, bool> areConnected;
-        std::map<std::string, ResourceInfo *> nameToResourceInfo;
-        std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToName;
+        std::map<std::string, ResourceInfo *> IDToResourceInfo;
+        std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToID;
         boost::mutex resourceLock;
         uhd::device3::sptr usrp;
 };

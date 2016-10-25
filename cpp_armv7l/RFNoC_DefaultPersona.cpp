@@ -217,7 +217,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 {
     boost::mutex::scoped_lock lock(this->resourceLock);
 
-    for (std::map<std::string, ResourceInfo *>::iterator it = this->nameToResourceInfo.begin(); it != this->nameToResourceInfo.end(); it++) {
+    for (std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.begin(); it != this->IDToResourceInfo.end(); it++) {
         ResourceInfo *resourceInfo = it->second;
         Resource_impl *resource = resourceInfo->resource;
 
@@ -309,19 +309,18 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
     CF::ExecutableDevice::ProcessID_Type pid = RFNoC_DefaultPersona_persona_base::execute(name, options, parameters);
 
     // Map the PID to the component identifier
-    std::string componentIdentifier = name;
-    componentIdentifier += ":";
+    std::string componentIdentifier;
 
     for (size_t i = 0; i < parameters.length(); ++i) {
         std::string id = parameters[i].id._ptr;
 
-        if (componentIdentifier == "COMPONENT_IDENTIFIER") {
+        if (id == "COMPONENT_IDENTIFIER") {
             componentIdentifier += ossie::any_to_string(parameters[i].value);
             break;
         }
     }
 
-    this->pidToName[pid] = componentIdentifier;
+    this->pidToID[pid] = componentIdentifier;
 
     return pid;
 }
@@ -332,13 +331,13 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     // Get the component identifier associated with this PID, then erase the mapping
-    std::string name = this->pidToName[processId];
-    this->pidToName.erase(processId);
+    std::string ID = this->pidToID[processId];
+    this->pidToID.erase(processId);
 
     // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
 
-    ResourceInfo *resourceInfo = this->nameToResourceInfo[name];
+    ResourceInfo *resourceInfo = this->IDToResourceInfo[ID];
 
     // Unmap the port hashes from this resource
     for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
@@ -349,8 +348,8 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     }
 
     // Delete and remove the resource info mapping
-    delete this->nameToResourceInfo[name];
-    this->nameToResourceInfo.erase(name);
+    delete this->IDToResourceInfo[ID];
+    this->IDToResourceInfo.erase(ID);
 
     // Call the parent terminate
     RFNoC_DefaultPersona_persona_base::terminate(processId);
@@ -360,16 +359,16 @@ void RFNoC_DefaultPersona_i::setBlockIDMapping(const std::string &componentID, c
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    std::map<std::string, ResourceInfo *>::iterator it = this->nameToResourceInfo.find(componentID);
+    std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.find(componentID);
 
-    if (it == this->nameToResourceInfo.end()) {
+    if (it == this->IDToResourceInfo.end()) {
         LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to set Block ID for unknown component: " << componentID);
         return;
     }
 
     LOG_INFO(RFNoC_DefaultPersona_i, componentID << " -> " << blockID);
 
-    this->nameToResourceInfo[componentID]->blockID = blockID;
+    this->IDToResourceInfo[componentID]->blockID = blockID;
 }
 
 void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
@@ -403,12 +402,11 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     ResourceInfo *resourceInfo = new ResourceInfo;
 
     // Map the component ID to the resource info
-    std::string componentIdentifier = libraryName;
-    componentIdentifier += ":";
+    std::string componentIdentifier;
 
     for (size_t i = 0; i < size_t(argc); i+=2) {
         if (strcmp(argv[i], "COMPONENT_IDENTIFIER") == 0) {
-            componentIdentifier += argv[i+1];
+            componentIdentifier = argv[i+1];
             break;
         }
     }
@@ -416,7 +414,7 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
 
-    this->nameToResourceInfo[componentIdentifier] = resourceInfo;
+    this->IDToResourceInfo[componentIdentifier] = resourceInfo;
 
     // Construct the resource
     Resource_impl *resource;
@@ -433,7 +431,7 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
 
         delete resourceInfo;
 
-        this->nameToResourceInfo.erase(componentIdentifier);
+        this->IDToResourceInfo.erase(componentIdentifier);
 
         return NULL;
     }
