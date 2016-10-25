@@ -226,31 +226,36 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         // Iterate over the uses ports
         for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
             BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
-            CORBA::ULong hash = port->_hash(1024);
-            std::map<CORBA::ULong, ResourceInfo *>::iterator it2 = this->hashToResourceInfo.find(hash);
 
-            LOG_DEBUG(RFNoC_DefaultPersona_i, "Checking port hash " << hash << " for connections");
+            // Iterate over the connections
+            for (size_t i = 0; i < port->connections()->length(); ++i) {
+                ExtendedCF::UsesConnection connection = port->connections()->operator [](i);
+                CORBA::ULong providesPortHash = connection.port->_hash(1024);
+                std::map<CORBA::ULong, ResourceInfo *>::iterator it2 = this->hashToResourceInfo.find(providesPortHash);
 
-            // That port maps to one of this Device's resources
-            if (it2 != this->hashToResourceInfo.end()) {
-                ResourceInfo *providesResourceInfo = it2->second;
-                Resource_impl *providesResource = providesResourceInfo->resource;
-                std::string providesResourceID = providesResource->_identifier;
+                LOG_DEBUG(RFNoC_DefaultPersona_i, "Checking port hash " << providesPortHash << " for connections");
 
-                LOG_DEBUG(RFNoC_DefaultPersona_i, "Found " << providesResource->_identifier << ", checking if already connected");
+                // That port maps to one of this Device's resources
+                if (it2 != this->hashToResourceInfo.end()) {
+                    ResourceInfo *providesResourceInfo = it2->second;
+                    Resource_impl *providesResource = providesResourceInfo->resource;
+                    std::string providesResourceID = providesResource->_identifier;
 
-                std::pair<CORBA::ULong, std::string> hashID = std::make_pair(hash, providesResourceID);
-                std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator connected = this->areConnected.find(hashID);
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Found " << providesResource->_identifier << ", checking if already connected");
 
-                // They aren't connected yet
-                if (connected == this->areConnected.end()) {
-                    LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " was not connected to " << providesResource->_identifier);
+                    std::pair<CORBA::ULong, std::string> hashID = std::make_pair(providesPortHash, providesResourceID);
+                    std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator connected = this->areConnected.find(hashID);
 
-                    // Connect things
+                    // They aren't connected yet
+                    if (connected == this->areConnected.end()) {
+                        LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " was not connected to " << providesResource->_identifier);
 
-                    this->areConnected[hashID] = true;
-                } else {
-                    LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " -> " << providesResource->_identifier);
+                        // Connect things
+
+                        this->areConnected[hashID] = true;
+                    } else {
+                        LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " -> " << providesResource->_identifier);
+                    }
                 }
             }
         }
