@@ -6,6 +6,12 @@
 
 #include <uhd/device3.hpp>
 
+struct ResourceInfo {
+    public:
+        Resource_impl *resource;
+        std::vector<BULKIO::UsesPortStatisticsProvider_ptr> usesPorts;
+};
+
 class RFNoC_DefaultPersona_i;
 
 class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
@@ -44,7 +50,9 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::vector<std::string> listNoCBlocks();
 
     private:
-        std::map<std::string, Resource_impl *> nameToResource;
+        std::map<CORBA::ULong, ResourceInfo *> hashToResourceInfo;
+        std::map<std::pair<CORBA::ULong, std::string>, bool> areConnected;
+        std::map<std::string, ResourceInfo *> nameToResourceInfo;
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToName;
         boost::mutex resourceLock;
         uhd::device3::sptr usrp;

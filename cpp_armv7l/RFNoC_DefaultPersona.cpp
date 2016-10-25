@@ -217,46 +217,45 @@ void RFNoC_DefaultPersona_i::construct()
 ************************************************************************************************/
 int RFNoC_DefaultPersona_i::serviceFunction()
 {
-    LOG_DEBUG(RFNoC_DefaultPersona_i, "serviceFunction() example log message");
-    
     boost::mutex::scoped_lock lock(this->resourceLock);
 
-    for (std::map<std::string, Resource_impl *>::iterator it = this->nameToResource.begin(); it != this->nameToResource.end(); it++) {
-        Resource_impl *resource = it->second;
+    for (std::map<std::string, ResourceInfo *>::iterator it = this->nameToResourceInfo.begin(); it != this->nameToResourceInfo.end(); it++) {
+        ResourceInfo *resourceInfo = it->second;
+        Resource_impl *resource = resourceInfo->resource;
 
-        CF::PortSet::PortInfoSequence *portSet = resource->getPortSet();
+        LOG_DEBUG(RFNoC_DefaultPersona_i, "Checking " << resource->_identifier << " for connections");
 
-        LOG_INFO(RFNoC_DefaultPersona_i, resource->_identifier);
+        // Iterate over the uses ports
+        for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
+            BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
+            CORBA::ULong hash = port->_hash(1024);
+            std::map<std::string, ResourceInfo *>::iterator it2 = this->hashToResourceInfo.find(hash);
 
-        for (size_t i = 0; i < portSet->length(); ++i) {
-            CF::PortSet::PortInfoType info = portSet->operator [](i);
+            LOG_DEBUG(RFNoC_DefaultPersona_i, "Checking port hash " << hash << " for connections");
 
-            LOG_INFO(RFNoC_DefaultPersona_i, "Port Name: " << info.name._ptr);
-            LOG_INFO(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
-            LOG_INFO(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
+            // That port maps to one of this Device's resources
+            if (it2 != this->hashToResourceInfo.end()) {
+                ResourceInfo *providesResourceInfo = it2->second;
+                Resource_impl *providesResource = providesResourceInfo->resource;
+                std::string providesResourceID = providesResource->_identifier;
 
-            if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
-                BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
+                LOG_DEBUG(RFNoC_DefaultPersona_i, "Found " << providesResource->_identifier << ", checking if already connected");
 
-                for (size_t j = 0; j < usesPort->connections()->length(); ++j) {
-                    ExtendedCF::UsesConnection connection = usesPort->connections()->operator [](j);
+                std::pair<CORBA::ULong, std::string> hashID = std::make_pair(hash, providesResourceID);
+                std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator connected = this->areConnected.find(hashID);
 
-                    LOG_INFO(RFNoC_DefaultPersona_i, connection.connectionId._ptr);
-                    LOG_INFO(RFNoC_DefaultPersona_i, connection.port->_hash(32));
+                // They aren't connected yet
+                if (connected == this->areConnected.end()) {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " was not connected to " << providesResource->_identifier);
+
+                    // Connect things
+
+                    this->areConnected[hashID] = true;
+                } else {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " -> " << providesResource->_identifier);
                 }
             }
         }
-
-        /*CF::ConnectionManager_ptr cm = this->getDomainManager()->getRef()->connectionMgr();
-
-        CF::ConnectionManager::ConnectionStatusSequence *connections = cm->connections();
-
-        LOG_INFO(RFNoC_DefaultPersona_i, "Connections");
-
-        for (size_t i = 0; i < connections->length(); ++i) {
-            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).connectionId._ptr);
-            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).providesEndpoint.endpointObject._ptr->_PR_magic);
-        }*/
     }
 
     return NOOP;
@@ -335,7 +334,9 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     boost::mutex::scoped_lock lock(this->resourceLock);
 
-    this->nameToResource.erase(name);
+    delete this->nameToResourceInfo[name];
+
+    this->nameToResourceInfo.erase(name);
 }
 
 void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
@@ -400,7 +401,47 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
 
     boost::mutex::scoped_lock lock(this->resourceLock);
 
-    this->nameToResource[componentIdentifier] = resource;
+    ResourceInfo *resourceInfo = new ResourceInfo;
+    resourceInfo->resource = resource;
+
+    // Map the ports
+    CF::PortSet::PortInfoSequence *portSet = resource->getPortSet();
+
+    LOG_INFO(RFNoC_DefaultPersona_i, resource->_identifier);
+
+    for (size_t i = 0; i < portSet->length(); ++i) {
+        CF::PortSet::PortInfoType info = portSet->operator [](i);
+
+        LOG_INFO(RFNoC_DefaultPersona_i, "Port Name: " << info.name._ptr);
+        LOG_INFO(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
+        LOG_INFO(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
+
+        this->hashToResourceInfo[info.obj_ptr->_hash(1024)] = resourceInfo;
+
+        if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
+            BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
+
+            resourceInfo->usesPorts.push_back(usesPort);
+        }
+
+        /*if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
+            BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
+
+            resourceInfo->usesMap[usesPort->__hash(1024)] = true;
+            for (size_t j = 0; j < usesPort->connections()->length(); ++j) {
+                ExtendedCF::UsesConnection connection = usesPort->connections()->operator [](j);
+
+                LOG_INFO(RFNoC_DefaultPersona_i, connection.connectionId._ptr);
+                LOG_INFO(RFNoC_DefaultPersona_i, connection.port->_hash(32));
+            }
+        } else if (strstr(info.direction._ptr, "Provides") && strstr(info.repid._ptr, "BULKIO")) {
+            BULKIO::ProvidesPortStatisticsProvider_ptr providesPort = BULKIO::ProvidesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
+
+            resourceInfo->providesMap[providesPort->__hash(1024)] = true;
+        }*/
+    }
+
+    this->nameToResourceInfo[componentIdentifier] = resourceInfo;
 
     return resource;
 }
