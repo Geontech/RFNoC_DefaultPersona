@@ -242,12 +242,12 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                     ExtendedCF::UsesConnection connection = usesPort->connections()->operator [](j);
 
                     LOG_INFO(RFNoC_DefaultPersona_i, connection.connectionId._ptr);
-                    LOG_INFO(RFNoC_DefaultPersona_i, connection.port->_PR_magic)
+                    LOG_INFO(RFNoC_DefaultPersona_i, connection.port->_hash(32));
                 }
             }
         }
 
-        CF::ConnectionManager_ptr cm = this->getDomainManager()->getRef()->connectionMgr();
+        /*CF::ConnectionManager_ptr cm = this->getDomainManager()->getRef()->connectionMgr();
 
         CF::ConnectionManager::ConnectionStatusSequence *connections = cm->connections();
 
@@ -256,7 +256,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         for (size_t i = 0; i < connections->length(); ++i) {
             LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).connectionId._ptr);
             LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).providesEndpoint.endpointObject._ptr->_PR_magic);
-        }
+        }*/
     }
 
     return NOOP;
