@@ -332,6 +332,15 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     boost::mutex::scoped_lock lock(this->resourceLock);
 
+    ResourceInfo *resourceInfo = this->nameToResourceInfo[name];
+
+    for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
+        BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
+        CORBA::ULong hash = port->_hash(1024);
+
+        this->hashToResourceInfo.erase(hash);
+    }
+
     delete this->nameToResourceInfo[name];
 
     this->nameToResourceInfo.erase(name);
@@ -383,7 +392,7 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, this->usrp->get_tree());
+    this->usrp->get_tree();
 
     Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
 
@@ -396,8 +405,6 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
             break;
         }
     }
-
-    boost::mutex::scoped_lock lock(this->resourceLock);
 
     ResourceInfo *resourceInfo = new ResourceInfo;
     resourceInfo->resource = resource;
@@ -438,6 +445,8 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
             resourceInfo->providesMap[providesPort->__hash(1024)] = true;
         }*/
     }
+
+    boost::mutex::scoped_lock lock(this->resourceLock);
 
     this->nameToResourceInfo[componentIdentifier] = resourceInfo;
 
