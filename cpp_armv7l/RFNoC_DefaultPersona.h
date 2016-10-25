@@ -4,6 +4,7 @@
 #include "RFNoC_DefaultPersona_persona_base.h"
 #include "HwLoadStatus.h"
 
+#include <bulkio/BULKIO_Interfaces.h>
 #include <uhd/device3.hpp>
 
 struct ResourceInfo {

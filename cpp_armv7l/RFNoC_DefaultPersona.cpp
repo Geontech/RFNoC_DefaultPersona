@@ -9,8 +9,6 @@
 
 #include "RFNoC_DefaultPersona.h"
 
-#include <bulkio/BULKIO_Interfaces.h>
-
 PREPARE_LOGGING(RFNoC_DefaultPersona_i)
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
@@ -229,7 +227,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
             BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
             CORBA::ULong hash = port->_hash(1024);
-            std::map<std::string, ResourceInfo *>::iterator it2 = this->hashToResourceInfo.find(hash);
+            std::map<CORBA::ULong, ResourceInfo *>::iterator it2 = this->hashToResourceInfo.find(hash);
 
             LOG_DEBUG(RFNoC_DefaultPersona_i, "Checking port hash " << hash << " for connections");
 
