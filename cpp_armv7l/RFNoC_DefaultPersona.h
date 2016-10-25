@@ -9,6 +9,7 @@
 
 struct ResourceInfo {
     public:
+        std::string blockID;
         Resource_impl *resource;
         std::vector<BULKIO::UsesPortStatisticsProvider_ptr> usesPorts;
 };
@@ -40,6 +41,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void terminate (CF::ExecutableDevice::ProcessID_Type processId)
                     throw ( CF::Device::InvalidState, CF::ExecutableDevice::InvalidProcess, CORBA::SystemException);
 
+        void setBlockIDMapping(const std::string &componentID, const std::string &blockID);
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
         void setUsrp(uhd::device3::sptr usrp);
 

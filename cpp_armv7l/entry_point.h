@@ -3,6 +3,8 @@
 
 #include <uhd/device3.hpp>
 
+#include "BlockID.h"
+
 // ************* AGREED UPON METHOD TO INSTANTIATE DEVICE FROM SHARED OBJECT *************
 //
 //   The following typedef defines how the shared object should be constructed.  Any
@@ -20,6 +22,6 @@
 //          Within this cpp file:
 //          void* personaPtr = construct(argc, argv, SharedAPIObject);
 //
-typedef Resource_impl* (*ConstructorPtr)(int, char*[], Device_impl* parentDevice, uhd::device3::sptr usrp);
+typedef Resource_impl* (*ConstructorPtr)(int, char*[], Device_impl* parentDevice, uhd::device3::sptr usrp, blockIDCallback cb);
 
 #endif // RFNOC_DEFAULTPERSONA_ENTRY_POINTS_H

@@ -305,8 +305,10 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
+    // Call the parent execute
     CF::ExecutableDevice::ProcessID_Type pid = RFNoC_DefaultPersona_persona_base::execute(name, options, parameters);
 
+    // Map the PID to the component identifier
     std::string componentIdentifier = name;
     componentIdentifier += ":";
 
@@ -329,16 +331,16 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    RFNoC_DefaultPersona_persona_base::terminate(processId);
-
+    // Get the component identifier associated with this PID, then erase the mapping
     std::string name = this->pidToName[processId];
-
     this->pidToName.erase(processId);
 
+    // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
 
     ResourceInfo *resourceInfo = this->nameToResourceInfo[name];
 
+    // Unmap the port hashes from this resource
     for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
         BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
         CORBA::ULong hash = port->_hash(1024);
@@ -346,9 +348,121 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
         this->hashToResourceInfo.erase(hash);
     }
 
+    // Delete and remove the resource info mapping
     delete this->nameToResourceInfo[name];
-
     this->nameToResourceInfo.erase(name);
+
+    // Call the parent terminate
+    RFNoC_DefaultPersona_persona_base::terminate(processId);
+}
+
+void RFNoC_DefaultPersona_i::setBlockIDMapping(const std::string &componentID, const std::string &blockID)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    std::map<std::string, ResourceInfo *>::iterator it = this->nameToResourceInfo.find(componentID);
+
+    if (it == this->nameToResourceInfo.end()) {
+        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to set Block ID for unknown component: " << componentID);
+        return;
+    }
+
+    LOG_INFO(RFNoC_DefaultPersona_i, componentID << " -> " << blockID);
+
+    this->nameToResourceInfo[componentID]->blockID = blockID;
+}
+
+void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
+{
+    hw_load_status_object hwLoadStatusObject;
+
+    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
+    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
+    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
+    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
+    hwLoadStatusObject.state = this->hw_load_status.state;
+
+    cb(hwLoadStatusObject);
+}
+
+void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
+{
+    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    this->usrp = usrp;
+
+    std::vector<std::string> NoCBlocks = listNoCBlocks();
+}
+
+Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
+{
+    // Touch the usrp pointer to validate it
+    this->usrp->get_tree();
+
+    // Create a new resource info
+    ResourceInfo *resourceInfo = new ResourceInfo;
+
+    // Map the component ID to the resource info
+    std::string componentIdentifier = libraryName;
+    componentIdentifier += ":";
+
+    for (size_t i = 0; i < size_t(argc); i+=2) {
+        if (strcmp(argv[i], "COMPONENT_IDENTIFIER") == 0) {
+            componentIdentifier += argv[i+1];
+            break;
+        }
+    }
+
+    // Lock to prevent the service function from using this resource
+    boost::mutex::scoped_lock lock(this->resourceLock);
+
+    this->nameToResourceInfo[componentIdentifier] = resourceInfo;
+
+    // Construct the resource
+    Resource_impl *resource;
+
+    try {
+        resource = fnptr(argc, argv, this, this->usrp, boost::bind(&RFNoC_DefaultPersona_i::setBlockIDMapping, this, _1, _2));
+
+        if (not resource) {
+            LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor returned NULL resource");
+            throw std::exception();
+        }
+    } catch (...) {
+        LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor threw an exception");
+
+        delete resourceInfo;
+
+        this->nameToResourceInfo.erase(componentIdentifier);
+
+        return NULL;
+    }
+
+    resourceInfo->resource = resource;
+
+    // Map the port hashes
+    CF::PortSet::PortInfoSequence *portSet = resource->getPortSet();
+
+    LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier);
+
+    for (size_t i = 0; i < portSet->length(); ++i) {
+        CF::PortSet::PortInfoType info = portSet->operator [](i);
+
+        LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Name: " << info.name._ptr);
+        LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
+        LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
+
+        this->hashToResourceInfo[info.obj_ptr->_hash(1024)] = resourceInfo;
+
+        // Store the uses port pointers
+        if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
+            BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
+
+            resourceInfo->usesPorts.push_back(usesPort);
+        }
+    }
+
+    return resource;
 }
 
 void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
@@ -356,7 +470,7 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
     // Simple example of a single hw_load_request
     request.length(4);
     request[0].id = CORBA::string_dup("hw_load_request::request_id");
-    request[0].value <<= ossie::generateUUID(); 
+    request[0].value <<= ossie::generateUUID();
     request[1].id = CORBA::string_dup("hw_load_request::requester_id");
     request[1].value <<= ossie::corba::returnString(identifier());
     request[2].id = CORBA::string_dup("hw_load_request::hardware_id");
@@ -385,90 +499,3 @@ std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
 
     return NoCBlocks;
 }
-
-void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
-{
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    this->usrp = usrp;
-
-    std::vector<std::string> NoCBlocks = listNoCBlocks();
-}
-
-Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
-{
-    this->usrp->get_tree();
-
-    Resource_impl *resource = fnptr(argc, argv, this, this->usrp);
-
-    std::string componentIdentifier = libraryName;
-    componentIdentifier += ":";
-
-    for (size_t i = 0; i < size_t(argc); i+=2) {
-        if (strcmp(argv[i], "COMPONENT_IDENTIFIER") == 0) {
-            componentIdentifier += argv[i+1];
-            break;
-        }
-    }
-
-    ResourceInfo *resourceInfo = new ResourceInfo;
-    resourceInfo->resource = resource;
-
-    // Map the ports
-    CF::PortSet::PortInfoSequence *portSet = resource->getPortSet();
-
-    LOG_INFO(RFNoC_DefaultPersona_i, resource->_identifier);
-
-    for (size_t i = 0; i < portSet->length(); ++i) {
-        CF::PortSet::PortInfoType info = portSet->operator [](i);
-
-        LOG_INFO(RFNoC_DefaultPersona_i, "Port Name: " << info.name._ptr);
-        LOG_INFO(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
-        LOG_INFO(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
-
-        this->hashToResourceInfo[info.obj_ptr->_hash(1024)] = resourceInfo;
-
-        if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
-            BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
-
-            resourceInfo->usesPorts.push_back(usesPort);
-        }
-
-        /*if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
-            BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
-
-            resourceInfo->usesMap[usesPort->__hash(1024)] = true;
-            for (size_t j = 0; j < usesPort->connections()->length(); ++j) {
-                ExtendedCF::UsesConnection connection = usesPort->connections()->operator [](j);
-
-                LOG_INFO(RFNoC_DefaultPersona_i, connection.connectionId._ptr);
-                LOG_INFO(RFNoC_DefaultPersona_i, connection.port->_hash(32));
-            }
-        } else if (strstr(info.direction._ptr, "Provides") && strstr(info.repid._ptr, "BULKIO")) {
-            BULKIO::ProvidesPortStatisticsProvider_ptr providesPort = BULKIO::ProvidesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
-
-            resourceInfo->providesMap[providesPort->__hash(1024)] = true;
-        }*/
-    }
-
-    boost::mutex::scoped_lock lock(this->resourceLock);
-
-    this->nameToResourceInfo[componentIdentifier] = resourceInfo;
-
-    return resource;
-}
-
-void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
-{
-    hw_load_status_object hwLoadStatusObject;
-
-    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
-    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
-    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
-    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
-    hwLoadStatusObject.state = this->hw_load_status.state;
-
-    cb(hwLoadStatusObject);
-}
-
-
