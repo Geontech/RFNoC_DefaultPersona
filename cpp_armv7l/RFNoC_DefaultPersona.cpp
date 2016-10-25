@@ -236,12 +236,13 @@ int RFNoC_DefaultPersona_i::serviceFunction()
             LOG_INFO(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
 
             if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
-                BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(portSet->operator [](i).name._ptr));
+                BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
 
                 for (size_t j = 0; j < usesPort->connections()->length(); ++j) {
                     ExtendedCF::UsesConnection connection = usesPort->connections()->operator [](j);
 
                     LOG_INFO(RFNoC_DefaultPersona_i, connection.connectionId._ptr);
+                    LOG_INFO(RFNoC_DefaultPersona_i, connection.port->_PR_magic)
                 }
             }
         }
@@ -253,8 +254,8 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         LOG_INFO(RFNoC_DefaultPersona_i, "Connections");
 
         for (size_t i = 0; i < connections->length(); ++i) {
-            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).connectionId);
-            //LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).providesEndpoint.repositoryId._ptr);
+            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).connectionId._ptr);
+            LOG_INFO(RFNoC_DefaultPersona_i, connections->operator [](i).providesEndpoint.endpointObject._ptr->_PR_magic);
         }
     }
 
