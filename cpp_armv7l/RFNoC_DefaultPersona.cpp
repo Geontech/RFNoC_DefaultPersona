@@ -9,6 +9,8 @@
 
 #include "RFNoC_DefaultPersona.h"
 
+#include <frontend/frontend.h>
+
 PREPARE_LOGGING(RFNoC_DefaultPersona_i)
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
@@ -251,6 +253,53 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                         LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " was not connected to " << providesResource->_identifier);
 
                         // Connect things
+                        if (resourceInfo->blockID.empty() or providesResourceInfo->blockID.empty()) {
+                            LOG_DEBUG(RFNoC_DefaultPersona_i, "RF-NoC Block IDs aren't set yet, cannot connect");
+                            continue;
+                        }
+
+                        bool foundProvides = (this->blockToGraph.find(providesResourceInfo->blockID) != this->blockToGraph.end());
+                        bool foundUses = (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end());
+
+                        // Create a new graph
+                        if (not foundProvides and not foundUses) {
+                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Creating a new graph");
+
+                            uhd::rfnoc::graph::sptr graph = this->usrp->create_graph(frontend::uuidGenerator());
+
+                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                            this->blockToGraph[resourceInfo->blockID] = graph;
+                            this->blockToGraph[providesResourceInfo->blockID] = graph;
+                        }
+                        // Add the provides block to the uses graph
+                        else if (foundUses) {
+                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the uses graph");
+
+                            uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
+
+                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                            this->blockToGraph[providesResourceInfo->blockID] = graph;
+                        }
+                        // Add the uses block to the provides graph
+                        else if (foundProvides) {
+                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the provides graph");
+
+                            uhd::rfnoc::graph::sptr graph = this->blockToGraph[providesResourceInfo->blockID];
+
+                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                            this->blockToGraph[resourceInfo->blockID] = graph;
+                        }
+                        // Merge the two graphs
+                        else {
+                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
+
+                            uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
+
+                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+                        }
 
                         this->areConnected[hashID] = true;
                     } else {
@@ -346,6 +395,9 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
         this->hashToResourceInfo.erase(hash);
     }
+
+    // Unmap the block ID from the graph
+    this->blockToGraph.erase(resourceInfo->blockID);
 
     // Delete and remove the resource info mapping
     delete this->IDToResourceInfo[ID];

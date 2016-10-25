@@ -53,6 +53,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::vector<std::string> listNoCBlocks();
 
     private:
+        std::map<std::string, uhd::rfnoc::graph::sptr> blockToGraph;
         std::map<CORBA::ULong, ResourceInfo *> hashToResourceInfo;
         std::map<std::pair<CORBA::ULong, std::string>, bool> areConnected;
         std::map<std::string, ResourceInfo *> IDToResourceInfo;
