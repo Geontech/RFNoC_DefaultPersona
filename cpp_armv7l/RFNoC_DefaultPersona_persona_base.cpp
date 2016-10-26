@@ -213,6 +213,8 @@ void RFNoC_DefaultPersona_persona_base::terminate(CF::ExecutableDevice::ProcessI
         CF::ExecutableDevice::InvalidProcess, 
         CORBA::SystemException ) 
 {
+    LOG_TRACE(RFNoC_DefaultPersona_persona_base, __PRETTY_FUNCTION__);
+
     // Initialize local variables
     ProcessMapIter processIter;
     ResourceMapIter resourceIter;
