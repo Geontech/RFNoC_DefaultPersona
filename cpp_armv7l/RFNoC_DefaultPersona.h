@@ -57,13 +57,13 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::vector<std::string> listNoCBlocks();
 
     private:
+        std::map<std::pair<CORBA::ULong, std::string>, bool> areConnected;
         std::map<std::string, uhd::rfnoc::graph::sptr> blockToGraph;
         std::map<std::string, std::list<std::string> *> blockToList;
         std::map<std::string, ResourceInfo *> blockToResourceInfo;
         std::map<std::string, std::list<std::string> *> graphToList;
         std::map<std::string, bool> graphUpdated;
         std::map<CORBA::ULong, ResourceInfo *> hashToResourceInfo;
-        std::map<std::pair<CORBA::ULong, std::string>, bool> areConnected;
         std::map<std::string, ResourceInfo *> IDToResourceInfo;
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToID;
         boost::mutex resourceLock;

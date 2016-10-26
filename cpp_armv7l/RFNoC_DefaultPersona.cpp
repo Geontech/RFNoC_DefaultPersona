@@ -473,46 +473,61 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    // Get the component identifier associated with this PID, then erase the mapping
-    std::string ID = this->pidToID[processId];
-    this->pidToID.erase(processId);
-
     // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
 
+    // Get the component identifier associated with this PID
+    std::string ID = this->pidToID[processId];
+
+    // Get the resource info associated with the component identifier
     ResourceInfo *resourceInfo = this->IDToResourceInfo[ID];
 
-    // Unmap the port hashes from this resource
+    // Get the graph name, list, and the list position for this resource info
+    std::string graphName = this->blockToGraph[resourceInfo->blockID]->get_name();
+    std::list<std::string> *list = this->blockToList[resourceInfo->blockID];
+    std::list<std::string>::iterator listIt = std::find(list->begin(), list->end(), resourceInfo->blockID);
+
+    LOG_DEBUG(RFNoC_DefaultPersona_i, "Terminating component: " << ID);
+
+    // Unmap the port hashes from this resource and to other resources
     for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
         BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
         CORBA::ULong hash = port->_hash(1024);
 
         this->hashToResourceInfo.erase(hash);
+
+        for (std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator it = this->areConnected.begin(); it != this->areConnected.end(); ++it) {
+            if (it->first.first == hash) {
+                this->areConnected.erase(it);
+            }
+        }
+    }
+
+    // Unmap the block ID from the graph
+    this->blockToGraph.erase(resourceInfo->blockID);
+
+    // Unmap the block ID from the list
+    this->blockToList.erase(resourceInfo->blockID);
+
+    // Remove the block ID from the list
+    list->erase(listIt);
+
+    // Clean up the list and graph if necessary
+    if (list->empty()) {
+        delete list;
+        this->graphToList.erase(graphName);
+        this->graphUpdated.erase(graphName);
     }
 
     // Unmap the block ID from the resource info
     this->blockToResourceInfo.erase(resourceInfo->blockID);
 
-    // Unmap the block ID from the graph
-    std::string graphName = this->blockToGraph[resourceInfo->blockID]->get_name();
-    this->blockToGraph.erase(resourceInfo->blockID);
-
-    // Clean up the list
-    std::list<std::string> *list = this->blockToList[resourceInfo->blockID];
-    std::list<std::string>::iterator it = std::find(list->begin(), list->end(), resourceInfo->blockID);
-
-    list->erase(it);
-
-    if (list->empty()) {
-        delete list;
-        this->graphToList.erase(graphName);
-    }
-
-    this->blockToList.erase(resourceInfo->blockID);
-
     // Delete and remove the resource info mapping
-    delete this->IDToResourceInfo[ID];
+    delete resourceInfo;
     this->IDToResourceInfo.erase(ID);
+
+    // Unmap the PID from the component identifier
+    this->pidToID.erase(processId);
 
     // Call the parent terminate
     RFNoC_DefaultPersona_persona_base::terminate(processId);
