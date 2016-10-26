@@ -219,6 +219,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 {
     boost::mutex::scoped_lock lock(this->resourceLock);
 
+    // Iterate over the resources to determine connections
     for (std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.begin(); it != this->IDToResourceInfo.end(); it++) {
         ResourceInfo *resourceInfo = it->second;
         Resource_impl *resource = resourceInfo->resource;
@@ -271,6 +272,14 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
                             this->blockToGraph[resourceInfo->blockID] = graph;
                             this->blockToGraph[providesResourceInfo->blockID] = graph;
+
+                            std::list<std::string> *blockList = new std::list<std::string>;
+
+                            blockList->push_back(resourceInfo->blockID);
+                            blockList->push_back(providesResourceInfo->blockID);
+
+                            this->graphToList[graph->get_name()] = blockList;
+                            this->graphUpdated[graph->get_name()] = true;
                         }
                         // Add the provides block to the uses graph
                         else if (foundUses) {
@@ -281,6 +290,14 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                             graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
 
                             this->blockToGraph[providesResourceInfo->blockID] = graph;
+
+                            std::list<std::string> *blockList = this->blockToList[resourceInfo->blockID];
+
+                            std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), resourceInfo->blockID);
+
+                            blockList->insert(++blockLoc, providesResourceInfo->blockID);
+
+                            this->graphUpdated[graph->get_name()] = true;
                         }
                         // Add the uses block to the provides graph
                         else if (foundProvides) {
@@ -291,22 +308,65 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                             graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
 
                             this->blockToGraph[resourceInfo->blockID] = graph;
+
+                            std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
+
+                            std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
+
+                            blockList->insert(blockLoc, resourceInfo->blockID);
+
+                            this->graphUpdated[graph->get_name()] = true;
                         }
-                        // Merge the two graphs
+                        // Merge the two graphs?
                         else {
                             LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
 
                             uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
 
                             graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                            std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
+
+                            std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
+
+                            blockList->insert(blockLoc, resourceInfo->blockID);
+
+                            this->graphUpdated[graph->get_name()] = true;
                         }
 
                         this->areConnected[hashID] = true;
-                    } else {
-                        LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " -> " << providesResource->_identifier);
                     }
                 }
             }
+        }
+    }
+
+    // Iterate over the lists
+    for (std::map<std::string, std::list<std::string> *>::iterator it = this->blockToList.begin(); it != this->blockToList.end(); ++it) {
+        if (this->graphUpdated[it->first]) {
+            LOG_DEBUG(RFNoC_DefaultPersona_i, "Graph: " << it->first);
+
+            std::stringstream ss;
+
+            for(std::list<std::string>::iterator it2 = it->second->begin(); it2 != it->second->end(); ++it2) {
+                if (it2 != it->second->begin()) {
+                    ss << " -> ";
+                }
+
+                ss << *it2;
+
+                // Update the resource
+                this->blockToResourceInfo[*it2]->setRxStreamerCb(false);
+                this->blockToResourceInfo[*it2]->setTxStreamerCb(false);
+            }
+
+            this->blockToResourceInfo[it->second->front()]->setTxStreamerCb(true);
+            this->blockToResourceInfo[it->second->back()]->setRxStreamerCb(true);
+
+            LOG_DEBUG(RFNoC_DefaultPersona_i, ss.str());
+            LOG_DEBUG(RFNoC_DefaultPersona_i, "");
+
+            this->graphUpdated[it->first] = false;
         }
     }
 
@@ -396,8 +456,25 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
         this->hashToResourceInfo.erase(hash);
     }
 
+    // Unmap the block ID from the resource info
+    this->blockToResourceInfo.erase(resourceInfo->blockID);
+
     // Unmap the block ID from the graph
+    std::string graphName = this->blockToGraph[resourceInfo->blockID]->get_name();
     this->blockToGraph.erase(resourceInfo->blockID);
+
+    // Clean up the list
+    std::list<std::string> *list = this->blockToList[resourceInfo->blockID];
+    std::list<std::string>::iterator it = std::find(list->begin(), list->end(), resourceInfo->blockID);
+
+    list->erase(it);
+
+    if (list->empty()) {
+        delete list;
+        this->graphToList.erase(graphName);
+    }
+
+    this->blockToList.erase(resourceInfo->blockID);
 
     // Delete and remove the resource info mapping
     delete this->IDToResourceInfo[ID];
@@ -421,6 +498,7 @@ void RFNoC_DefaultPersona_i::setBlockIDMapping(const std::string &componentID, c
     LOG_INFO(RFNoC_DefaultPersona_i, componentID << " -> " << blockID);
 
     this->IDToResourceInfo[componentID]->blockID = blockID;
+    this->blockToResourceInfo[blockID] = this->IDToResourceInfo[componentID];
 }
 
 void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
@@ -434,6 +512,34 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
     hwLoadStatusObject.state = this->hw_load_status.state;
 
     cb(hwLoadStatusObject);
+}
+
+void RFNoC_DefaultPersona_i::setSetRxStreamer(const std::string &componentID, setStreamerCallback cb)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.find(componentID);
+
+    if (it == this->IDToResourceInfo.end()) {
+        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to set setRxStreamer for unknown component: " << componentID);
+        return;
+    }
+
+    this->IDToResourceInfo[componentID]->setRxStreamerCb = cb;
+}
+
+void RFNoC_DefaultPersona_i::setSetTxStreamer(const std::string &componentID, setStreamerCallback cb)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.find(componentID);
+
+    if (it == this->IDToResourceInfo.end()) {
+        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to set setTxStreamer for unknown component: " << componentID);
+        return;
+    }
+
+    this->IDToResourceInfo[componentID]->setTxStreamerCb = cb;
 }
 
 void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
@@ -472,7 +578,11 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     Resource_impl *resource;
 
     try {
-        resource = fnptr(argc, argv, this, this->usrp, boost::bind(&RFNoC_DefaultPersona_i::setBlockIDMapping, this, _1, _2));
+        blockIDCallback blockIdCb = boost::bind(&RFNoC_DefaultPersona_i::setBlockIDMapping, this, _1, _2);
+        setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_DefaultPersona_i::setSetRxStreamer, this, _1, _2);
+        setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_DefaultPersona_i::setSetTxStreamer, this, _1, _2);
+
+        resource = fnptr(argc, argv, this, this->usrp, blockIdCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
         if (not resource) {
             LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor returned NULL resource");

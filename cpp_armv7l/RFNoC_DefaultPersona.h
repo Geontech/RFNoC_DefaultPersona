@@ -11,6 +11,8 @@ struct ResourceInfo {
     public:
         std::string blockID;
         Resource_impl *resource;
+        setStreamerCallback setRxStreamerCb;
+        setStreamerCallback setTxStreamerCb;
         std::vector<BULKIO::UsesPortStatisticsProvider_ptr> usesPorts;
 };
 
@@ -43,6 +45,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
 
         void setBlockIDMapping(const std::string &componentID, const std::string &blockID);
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
+        void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
+        void setSetTxStreamer(const std::string &componentID, setStreamerCallback cb);
         void setUsrp(uhd::device3::sptr usrp);
 
     protected:
@@ -54,6 +58,10 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
 
     private:
         std::map<std::string, uhd::rfnoc::graph::sptr> blockToGraph;
+        std::map<std::string, std::list<std::string> *> blockToList;
+        std::map<std::string, ResourceInfo *> blockToResourceInfo;
+        std::map<std::string, std::list<std::string> *> graphToList;
+        std::map<std::string, bool> graphUpdated;
         std::map<CORBA::ULong, ResourceInfo *> hashToResourceInfo;
         std::map<std::pair<CORBA::ULong, std::string>, bool> areConnected;
         std::map<std::string, ResourceInfo *> IDToResourceInfo;
