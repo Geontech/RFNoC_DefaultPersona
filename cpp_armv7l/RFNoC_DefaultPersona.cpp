@@ -16,39 +16,39 @@ PREPARE_LOGGING(RFNoC_DefaultPersona_i)
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, compDev)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
 }
 
 RFNoC_DefaultPersona_i::~RFNoC_DefaultPersona_i()
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 }
 
 void RFNoC_DefaultPersona_i::construct()
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     this->hw_load_status.hardware_id = "E310";
     this->hw_load_status.load_filepath = "/usr/share/uhd/images/usrp_e310_fpga.bit";
@@ -217,6 +217,8 @@ void RFNoC_DefaultPersona_i::construct()
 ************************************************************************************************/
 int RFNoC_DefaultPersona_i::serviceFunction()
 {
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
     boost::mutex::scoped_lock lock(this->resourceLock);
 
     // Iterate over the resources to determine connections
@@ -410,7 +412,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& capacities)
         throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::InsufficientCapacity, CORBA::SystemException) 
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     bool allocationSuccess = false;
 
@@ -431,7 +433,7 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities)
         throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CORBA::SystemException) 
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     /*
      * Do deallocation work here...
@@ -552,6 +554,8 @@ void RFNoC_DefaultPersona_i::setBlockIDMapping(const std::string &componentID, c
 
 void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
 {
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
     hw_load_status_object hwLoadStatusObject;
 
     hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
@@ -593,7 +597,7 @@ void RFNoC_DefaultPersona_i::setSetTxStreamer(const std::string &componentID, se
 
 void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
 {
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     this->usrp = usrp;
 
@@ -602,6 +606,8 @@ void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
     // Touch the usrp pointer to validate it
     this->usrp->get_tree();
 
@@ -687,7 +693,7 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
     request[3].id = CORBA::string_dup("hw_load_request::load_filepath");
     request[3].value <<= "/PATH/TO/HW/FILE";
 */
-    LOG_INFO(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 }
 
 std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
