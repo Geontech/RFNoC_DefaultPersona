@@ -342,7 +342,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
     }
 
     // Iterate over the lists
-    for (std::map<std::string, std::list<std::string> *>::iterator it = this->blockToList.begin(); it != this->blockToList.end(); ++it) {
+    for (std::map<std::string, std::list<std::string> *>::iterator it = this->graphToList.begin(); it != this->graphToList.end(); ++it) {
         if (this->graphUpdated[it->first]) {
             LOG_DEBUG(RFNoC_DefaultPersona_i, "Graph: " << it->first);
 
