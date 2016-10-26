@@ -284,7 +284,7 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     //combinedProps[skipRunInd].value <<= true;
 
     // Convert combined properties into ARGV/ARGC format
-    argc = combinedProps.length() * 2;
+    argc = combinedProps.length() * 2 + 1;
     char* argv[argc];
     for (unsigned int i = 0; i < combinedProps.length(); i++) {
         propId = combinedProps[i].id;
@@ -298,9 +298,9 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     }
 
     // Add the SKIP_RUN argument, which takes no arguments
-    //const std::string skipRun = "SKIP_RUN";
-    //argv[argCounter] = (char*) malloc(skipRun.size() + 1);
-    //strcpy(argv[argCounter++], skipRun.c_str());
+    const std::string skipRun = "SKIP_RUN";
+    argv[argCounter] = (char*) malloc(skipRun.size() + 1);
+    strcpy(argv[argCounter++], skipRun.c_str());
 
     // Look for the 'construct' C-method
     fnPtr = dlsym(pHandle, symbol);
