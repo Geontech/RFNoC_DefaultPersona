@@ -278,14 +278,14 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
 
     // Add SKIP_FLAG to properties
     combinedProps = parameters;
-    skipRunInd = combinedProps.length();
-    combinedProps.length(skipRunInd + 1);
-    combinedProps[skipRunInd].id = CORBA::string_dup("SKIP_RUN");
-    combinedProps[skipRunInd].value <<= true;
+    //skipRunInd = combinedProps.length();
+    //combinedProps.length(skipRunInd + 1);
+    //combinedProps[skipRunInd].id = CORBA::string_dup("SKIP_RUN");
+    //combinedProps[skipRunInd].value <<= true;
 
     // Convert combined properties into ARGV/ARGC format
     argc = combinedProps.length() * 2;
-    char* argv[argc];
+    char* argv[argc + 1];
     for (unsigned int i = 0; i < combinedProps.length(); i++) {
         propId = combinedProps[i].id;
         propValue = ossie::any_to_string(combinedProps[i].value);
@@ -297,9 +297,10 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
         strcpy(argv[argCounter++], propValue.c_str());
     }
 
-    for (size_t i = 0; i < argc; ++i) {
-        LOG_INFO(RFNoC_DefaultPersona_persona_base, argv[i++] << ": " << argv[i]);
-    }
+    // Add the SKIP_RUN argument, which takes no arguments
+    const std::string skipRun = "SKIP_RUN";
+    argv[argCounter] = (char*) malloc(skipRun.size() + 1);
+    strcpy(argv[argCounter++], skipRun.c_str());
 
     // Look for the 'construct' C-method
     fnPtr = dlsym(pHandle, symbol);
