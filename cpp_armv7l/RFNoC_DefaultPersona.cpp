@@ -229,113 +229,147 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         // Iterate over the uses ports
         for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
             BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
+            ExtendedCF::UsesConnectionSequence *connections = port->connections();
+            bool foundConnection = false;
 
-            // Iterate over the connections
-            for (size_t i = 0; i < port->connections()->length(); ++i) {
-                ExtendedCF::UsesConnection connection = port->connections()->operator [](i);
-                CORBA::ULong providesPortHash = connection.port->_hash(1024);
-                std::map<CORBA::ULong, ResourceInfo *>::iterator it2 = this->hashToResourceInfo.find(providesPortHash);
+            // This resource has connections, though not necessarily to another of this Device's resources
+            if (connections->length() != 0) {
+                // Iterate over the connections
+                for (size_t i = 0; i < connections->length(); ++i) {
+                    ExtendedCF::UsesConnection connection = port->connections()->operator [](i);
+                    CORBA::ULong providesPortHash = connection.port->_hash(1024);
+                    std::map<CORBA::ULong, ResourceInfo *>::iterator it2 = this->hashToResourceInfo.find(providesPortHash);
 
-                LOG_DEBUG(RFNoC_DefaultPersona_i, "Checking port hash " << providesPortHash << " for connections");
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Checking port hash " << providesPortHash << " for connections");
 
-                // That port maps to one of this Device's resources
-                if (it2 != this->hashToResourceInfo.end()) {
-                    ResourceInfo *providesResourceInfo = it2->second;
-                    Resource_impl *providesResource = providesResourceInfo->resource;
-                    std::string providesResourceID = providesResource->_identifier;
+                    // That port maps to one of this Device's resources
+                    if (it2 != this->hashToResourceInfo.end()) {
+                        ResourceInfo *providesResourceInfo = it2->second;
+                        Resource_impl *providesResource = providesResourceInfo->resource;
+                        std::string providesResourceID = providesResource->_identifier;
 
-                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Found " << providesResource->_identifier << ", checking if already connected");
+                        LOG_DEBUG(RFNoC_DefaultPersona_i, "Found " << providesResource->_identifier << ", checking if already connected");
 
-                    std::pair<CORBA::ULong, std::string> hashID = std::make_pair(providesPortHash, providesResourceID);
-                    std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator connected = this->areConnected.find(hashID);
+                        std::pair<CORBA::ULong, std::string> hashID = std::make_pair(providesPortHash, providesResourceID);
+                        std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator connected = this->areConnected.find(hashID);
 
-                    // They aren't connected yet
-                    if (connected == this->areConnected.end()) {
-                        LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " was not connected to " << providesResource->_identifier);
+                        // They aren't connected yet
+                        if (connected == this->areConnected.end()) {
+                            LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " was not connected to " << providesResource->_identifier);
 
-                        // Connect things
-                        if (resourceInfo->blockID.empty() or providesResourceInfo->blockID.empty()) {
-                            LOG_DEBUG(RFNoC_DefaultPersona_i, "RF-NoC Block IDs aren't set yet, cannot connect");
-                            continue;
+                            // Connect things
+                            if (resourceInfo->blockID.empty() or providesResourceInfo->blockID.empty()) {
+                                LOG_DEBUG(RFNoC_DefaultPersona_i, "RF-NoC Block IDs aren't set yet, cannot connect");
+                                continue;
+                            }
+
+                            bool foundProvides = (this->blockToGraph.find(providesResourceInfo->blockID) != this->blockToGraph.end());
+                            bool foundUses = (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end());
+
+                            // Create a new graph
+                            if (not foundProvides and not foundUses) {
+                                LOG_DEBUG(RFNoC_DefaultPersona_i, "Creating a new graph");
+
+                                uhd::rfnoc::graph::sptr graph = this->usrp->create_graph(frontend::uuidGenerator());
+
+                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                                this->blockToGraph[resourceInfo->blockID] = graph;
+                                this->blockToGraph[providesResourceInfo->blockID] = graph;
+
+                                std::list<std::string> *blockList = new std::list<std::string>;
+
+                                blockList->push_back(resourceInfo->blockID);
+                                blockList->push_back(providesResourceInfo->blockID);
+
+                                this->graphToList[graph->get_name()] = blockList;
+                                this->graphUpdated[graph->get_name()] = true;
+                            }
+                            // Add the provides block to the uses graph
+                            else if (foundUses) {
+                                LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the uses graph");
+
+                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
+
+                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                                this->blockToGraph[providesResourceInfo->blockID] = graph;
+
+                                std::list<std::string> *blockList = this->blockToList[resourceInfo->blockID];
+
+                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), resourceInfo->blockID);
+
+                                blockList->insert(++blockLoc, providesResourceInfo->blockID);
+
+                                this->graphUpdated[graph->get_name()] = true;
+                            }
+                            // Add the uses block to the provides graph
+                            else if (foundProvides) {
+                                LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the provides graph");
+
+                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[providesResourceInfo->blockID];
+
+                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                                this->blockToGraph[resourceInfo->blockID] = graph;
+
+                                std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
+
+                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
+
+                                blockList->insert(blockLoc, resourceInfo->blockID);
+
+                                this->graphUpdated[graph->get_name()] = true;
+                            }
+                            // Merge the two graphs?
+                            else {
+                                LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
+
+                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
+
+                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                                std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
+
+                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
+
+                                blockList->insert(blockLoc, resourceInfo->blockID);
+
+                                this->graphUpdated[graph->get_name()] = true;
+                            }
+
+                            this->areConnected[hashID] = true;
+                            foundConnection = true;
                         }
-
-                        bool foundProvides = (this->blockToGraph.find(providesResourceInfo->blockID) != this->blockToGraph.end());
-                        bool foundUses = (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end());
-
-                        // Create a new graph
-                        if (not foundProvides and not foundUses) {
-                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Creating a new graph");
-
-                            uhd::rfnoc::graph::sptr graph = this->usrp->create_graph(frontend::uuidGenerator());
-
-                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
-
-                            this->blockToGraph[resourceInfo->blockID] = graph;
-                            this->blockToGraph[providesResourceInfo->blockID] = graph;
-
-                            std::list<std::string> *blockList = new std::list<std::string>;
-
-                            blockList->push_back(resourceInfo->blockID);
-                            blockList->push_back(providesResourceInfo->blockID);
-
-                            this->graphToList[graph->get_name()] = blockList;
-                            this->graphUpdated[graph->get_name()] = true;
-                        }
-                        // Add the provides block to the uses graph
-                        else if (foundUses) {
-                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the uses graph");
-
-                            uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
-
-                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
-
-                            this->blockToGraph[providesResourceInfo->blockID] = graph;
-
-                            std::list<std::string> *blockList = this->blockToList[resourceInfo->blockID];
-
-                            std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), resourceInfo->blockID);
-
-                            blockList->insert(++blockLoc, providesResourceInfo->blockID);
-
-                            this->graphUpdated[graph->get_name()] = true;
-                        }
-                        // Add the uses block to the provides graph
-                        else if (foundProvides) {
-                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the provides graph");
-
-                            uhd::rfnoc::graph::sptr graph = this->blockToGraph[providesResourceInfo->blockID];
-
-                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
-
-                            this->blockToGraph[resourceInfo->blockID] = graph;
-
-                            std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
-
-                            std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
-
-                            blockList->insert(blockLoc, resourceInfo->blockID);
-
-                            this->graphUpdated[graph->get_name()] = true;
-                        }
-                        // Merge the two graphs?
-                        else {
-                            LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
-
-                            uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
-
-                            graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
-
-                            std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
-
-                            std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
-
-                            blockList->insert(blockLoc, resourceInfo->blockID);
-
-                            this->graphUpdated[graph->get_name()] = true;
-                        }
-
-                        this->areConnected[hashID] = true;
                     }
+                }
+            }
+
+            // This resource has no connections or is not connected to another of this Device's resources
+            if (connections->length() == 0 or not foundConnection) {
+                LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " has no connections to another of this Device's resources");
+
+                // Connect things
+                if (resourceInfo->blockID.empty()) {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "RF-NoC Block ID is not set yet, cannot create graph");
+                    continue;
+                }
+
+                bool foundGraph = (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end());
+
+                if (not foundGraph) {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Creating a new graph");
+
+                    uhd::rfnoc::graph::sptr graph = this->usrp->create_graph(frontend::uuidGenerator());
+
+                    this->blockToGraph[resourceInfo->blockID] = graph;
+
+                    std::list<std::string> *blockList = new std::list<std::string>;
+
+                    blockList->push_back(resourceInfo->blockID);
+
+                    this->graphToList[graph->get_name()] = blockList;
+                    this->graphUpdated[graph->get_name()] = true;
                 }
             }
         }
