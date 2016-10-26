@@ -297,6 +297,10 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
         strcpy(argv[argCounter++], propValue.c_str());
     }
 
+    for (size_t i = 0; i < argc; ++i) {
+        LOG_INFO(RFNoC_DefaultPersona_persona_base, argv[i++] << ": " << argv[i]);
+    }
+
     // Look for the 'construct' C-method
     fnPtr = dlsym(pHandle, symbol);
     if (!fnPtr) {
