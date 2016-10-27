@@ -680,20 +680,20 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     return resource;
 }
 
-void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request) {
-/*
-    // Simple example of a single hw_load_request
+void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
     request.length(4);
+
     request[0].id = CORBA::string_dup("hw_load_request::request_id");
     request[0].value <<= ossie::generateUUID();
     request[1].id = CORBA::string_dup("hw_load_request::requester_id");
-    request[1].value <<= ossie::corba::returnString(identifier());
+    request[1].value <<= ossie::corba::returnString(this->_identifier.c_str());
     request[2].id = CORBA::string_dup("hw_load_request::hardware_id");
-    request[2].value <<= "MY_HARDWARE_TYPE";
+    request[2].value <<= this->hw_load_status.hardware_id;
     request[3].id = CORBA::string_dup("hw_load_request::load_filepath");
-    request[3].value <<= "/PATH/TO/HW/FILE";
-*/
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+    request[3].value <<= this->hw_load_status.load_filepath;
 }
 
 std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
