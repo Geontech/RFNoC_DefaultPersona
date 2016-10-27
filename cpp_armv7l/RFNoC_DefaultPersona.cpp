@@ -599,7 +599,7 @@ void RFNoC_DefaultPersona_i::setUsrpAddress(uhd::device_addr_t usrpAddress)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    this->usrp = uhd::device3::make(usrpAddress);
+    //this->usrp = uhd::device3::make(usrpAddress);
 
     this->usrpAddress = usrpAddress;
 
@@ -611,7 +611,7 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     // Touch the usrp pointer to validate it
-    this->usrp->get_tree();
+    //this->usrp->get_tree();
 
     // Create a new resource info
     ResourceInfo *resourceInfo = new ResourceInfo;
