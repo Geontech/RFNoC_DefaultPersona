@@ -219,6 +219,10 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
+    if (not this->usrp) {
+        return NOOP;
+    }
+
     boost::mutex::scoped_lock lock(this->resourceLock);
 
     // Iterate over the resources to determine connections
@@ -426,6 +430,15 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 
     if (allocationSuccess) {
         allocationSuccess = attemptToProgramParent();
+
+        try {
+            LOG_DEBUG(RFNoC_DefaultPersona_i, "Successfully programmed parent, attempting to retrieve USRP pointer");
+            this->usrp = uhd::device3::make(this->usrpAddress);
+        } catch(...) {
+            LOG_ERROR(RFNoC_DefaultPersona_i, "Failed to retrieve USRP pointer");
+            allocationSuccess = false;
+            attemptToUnprogramParent();
+        }
     }
     return allocationSuccess;
 }
