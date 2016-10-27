@@ -61,6 +61,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::map<std::string, uhd::rfnoc::graph::sptr> blockToGraph;
         std::map<std::string, std::list<std::string> *> blockToList;
         std::map<std::string, ResourceInfo *> blockToResourceInfo;
+        bool enabled;
         std::map<std::string, std::list<std::string> *> graphToList;
         std::map<std::string, bool> graphUpdated;
         std::map<CORBA::ULong, ResourceInfo *> hashToResourceInfo;

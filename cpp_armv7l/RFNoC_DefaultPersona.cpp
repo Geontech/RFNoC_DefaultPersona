@@ -434,6 +434,7 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
         try {
             LOG_DEBUG(RFNoC_DefaultPersona_i, "Successfully programmed parent, attempting to retrieve USRP pointer");
             this->usrp = uhd::device3::make(this->usrpAddress);
+            this->enabled = true;
         } catch(...) {
             LOG_ERROR(RFNoC_DefaultPersona_i, "Failed to retrieve USRP pointer");
             allocationSuccess = false;
@@ -448,10 +449,8 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    /*
-     * Do deallocation work here...
-     */
-
+    this->enabled = false;
+    this->usrp.reset();
 
     attemptToUnprogramParent();
 }
@@ -462,6 +461,11 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
             CORBA::SystemException)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    if (not this->enabled) {
+        LOG_ERROR(RFNoC_DefaultPersona_i, "This persona has not been loaded yet");
+        throw CF::ExecutableDevice::ExecuteFail();
+    }
 
     // Call the parent execute
     CF::ExecutableDevice::ProcessID_Type pid = RFNoC_DefaultPersona_persona_base::execute(name, options, parameters);
