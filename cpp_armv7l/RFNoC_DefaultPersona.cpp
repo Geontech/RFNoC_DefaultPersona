@@ -14,28 +14,32 @@
 PREPARE_LOGGING(RFNoC_DefaultPersona_i)
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
-    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl)
+    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl),
+    enabled(false)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev) :
-    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, compDev)
+    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, compDev),
+    enabled(false)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities) :
-    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities)
+    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities),
+    enabled(false)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev) :
-    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev)
+    RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev),
+    enabled(false)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
