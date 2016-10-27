@@ -47,7 +47,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
         void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
         void setSetTxStreamer(const std::string &componentID, setStreamerCallback cb);
-        void setUsrp(uhd::device3::sptr usrp);
+        void setUsrpAddress(uhd::device_addr_t usrpAddress);
 
     protected:
         Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -68,6 +68,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToID;
         boost::mutex resourceLock;
         uhd::device3::sptr usrp;
+        uhd::device_addr_t usrpAddress;
 };
 
 #endif // RFNOC_DEFAULTPERSONA_I_IMPL_H

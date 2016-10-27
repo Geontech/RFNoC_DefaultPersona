@@ -595,13 +595,15 @@ void RFNoC_DefaultPersona_i::setSetTxStreamer(const std::string &componentID, se
     this->IDToResourceInfo[componentID]->setTxStreamerCb = cb;
 }
 
-void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
+void RFNoC_DefaultPersona_i::setUsrpAddress(uhd::device_addr_t usrpAddress)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    this->usrp = usrp;
+    this->usrp = uhd::device3::make(usrpAddress);
 
-    std::vector<std::string> NoCBlocks = listNoCBlocks();
+    this->usrpAddress = usrpAddress;
+
+    //std::vector<std::string> NoCBlocks = listNoCBlocks();
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
@@ -637,7 +639,7 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
         setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_DefaultPersona_i::setSetRxStreamer, this, _1, _2);
         setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_DefaultPersona_i::setSetTxStreamer, this, _1, _2);
 
-        resource = fnptr(argc, argv, this, this->usrp, blockIdCb, setSetRxStreamerCb, setSetTxStreamerCb);
+        resource = fnptr(argc, argv, this, this->usrpAddress, blockIdCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
         if (not resource) {
             LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor returned NULL resource");

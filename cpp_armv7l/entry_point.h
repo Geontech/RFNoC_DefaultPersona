@@ -1,7 +1,7 @@
 #ifndef RFNOC_DEFAULTPERSONA_ENTRY_POINTS_H
 #define RFNOC_DEFAULTPERSONA_ENTRY_POINTS_H
 
-#include <uhd/device3.hpp>
+#include <uhd/types/device_addr.hpp>
 
 #include "RFNoC_Component.h"
 
@@ -22,6 +22,6 @@
 //          Within this cpp file:
 //          void* personaPtr = construct(argc, argv, SharedAPIObject);
 //
-typedef Resource_impl* (*ConstructorPtr)(int, char*[], Device_impl* parentDevice, uhd::device3::sptr usrp, blockIDCallback blockIDCb, setSetStreamerCallback setSetRxStreamerCb, setSetStreamerCallback setSetTxStreamerCb);
+typedef Resource_impl* (*ConstructorPtr)(int, char*[], Device_impl* parentDevice, uhd::device_addr_t usrpAddress, blockIDCallback blockIDCb, setSetStreamerCallback setSetRxStreamerCb, setSetStreamerCallback setSetTxStreamerCb);
 
 #endif // RFNOC_DEFAULTPERSONA_ENTRY_POINTS_H
