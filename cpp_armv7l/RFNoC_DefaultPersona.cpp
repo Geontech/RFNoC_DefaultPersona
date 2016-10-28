@@ -501,55 +501,96 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
 
+    if (this->pidToID.find(processId) == this->pidToID.end()) {
+        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to terminate a process with an ID not tracked by this Device");
+        throw CF::ExecutableDevice::InvalidProcess();
+    }
+
     // Get the component identifier associated with this PID
     std::string ID = this->pidToID[processId];
 
-    // Get the resource info associated with the component identifier
-    ResourceInfo *resourceInfo = this->IDToResourceInfo[ID];
-
-    // Get the graph name, list, and the list position for this resource info
-    std::string graphName = this->blockToGraph[resourceInfo->blockID]->get_name();
-    std::list<std::string> *list = this->blockToList[resourceInfo->blockID];
-    std::list<std::string>::iterator listIt = std::find(list->begin(), list->end(), resourceInfo->blockID);
-
     LOG_DEBUG(RFNoC_DefaultPersona_i, "Terminating component: " << ID);
 
-    // Unmap the port hashes from this resource and to other resources
-    for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
-        BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
-        CORBA::ULong hash = port->_hash(1024);
+    // Get the resource info associated with the component identifier
+    if (this->IDToResourceInfo.find(ID) != this->IDToResourceInfo.end()) {
+        if (this->IDToResourceInfo[ID] != NULL) {
+            LOG_DEBUG(RFNoC_DefaultPersona_i, "Cleaning up the resource info");
 
-        this->hashToResourceInfo.erase(hash);
+            ResourceInfo *resourceInfo = this->IDToResourceInfo[ID];
 
-        for (std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator it = this->areConnected.begin(); it != this->areConnected.end(); ++it) {
-            if (it->first.first == hash) {
-                this->areConnected.erase(it);
+            // Clean up the RF-NoC graph, if necessary
+            if (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end()) {
+                if (this->blockToGraph[resourceInfo->blockID] != NULL) {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Cleaning up the graph info");
+
+                    std::string graphName = this->blockToGraph[resourceInfo->blockID]->get_name();
+
+                    if (this->graphToList.find(graphName) != this->graphToList.end()) {
+                        this->graphToList.erase(graphName);
+                    }
+
+                    if (this->graphUpdated.find(graphName) != this->graphUpdated.end()) {
+                        this->graphUpdated.erase(graphName);
+                    }
+                }
+
+                // Unmap the block ID from the graph
+                this->blockToGraph.erase(resourceInfo->blockID);
             }
+
+            // Clean up the block list, if necessary
+            if (this->blockToList.find(resourceInfo->blockID) != this->blockToList.end()) {
+                if (this->blockToList[resourceInfo->blockID] != NULL) {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Cleaning up the list info");
+
+                    std::list<std::string> *list = this->blockToList[resourceInfo->blockID];
+                    std::list<std::string>::iterator listIt = std::find(list->begin(), list->end(), resourceInfo->blockID);
+
+                    if (listIt != list->end()) {
+                        list->erase(listIt);
+                    }
+
+                    if (list->empty()) {
+                        delete list;
+                    }
+                }
+
+                // Unmap the block ID from the list
+                this->blockToList.erase(resourceInfo->blockID);
+            }
+
+            // Unmap the port hashes from this resource and to other resources
+            for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
+                BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
+                CORBA::ULong hash = port->_hash(1024);
+
+                LOG_DEBUG(RFNoC_DefaultPersona_i, "Unmapping port with hash " << hash << " from resource info");
+
+                // Unmap the hash from the resource info
+                if (this->hashToResourceInfo.find(hash) != this->hashToResourceInfo.end()) {
+                    this->hashToResourceInfo.erase(hash);
+                }
+
+                // Iterate over the connection indicators, checking the hash against this port's
+                for (std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator it = this->areConnected.begin(); it != this->areConnected.end(); ++it) {
+                    if (it->first.first == hash) {
+                        this->areConnected.erase(it);
+                    }
+                }
+            }
+
+            // Unmap the block ID from the resource info
+            if (this->blockToResourceInfo.find(resourceInfo->blockID) != this->blockToResourceInfo.end()) {
+                this->blockToResourceInfo.erase(resourceInfo->blockID);
+            }
+
+            // Delete the resource info
+            delete resourceInfo;
         }
+
+        // Unmap the ID from the resource info
+        this->IDToResourceInfo.erase(ID);
     }
-
-    // Unmap the block ID from the graph
-    this->blockToGraph.erase(resourceInfo->blockID);
-
-    // Unmap the block ID from the list
-    this->blockToList.erase(resourceInfo->blockID);
-
-    // Remove the block ID from the list
-    list->erase(listIt);
-
-    // Clean up the list and graph if necessary
-    if (list->empty()) {
-        delete list;
-        this->graphToList.erase(graphName);
-        this->graphUpdated.erase(graphName);
-    }
-
-    // Unmap the block ID from the resource info
-    this->blockToResourceInfo.erase(resourceInfo->blockID);
-
-    // Delete and remove the resource info mapping
-    delete resourceInfo;
-    this->IDToResourceInfo.erase(ID);
 
     // Unmap the PID from the component identifier
     this->pidToID.erase(processId);
