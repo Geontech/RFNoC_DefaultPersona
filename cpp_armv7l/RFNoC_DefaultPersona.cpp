@@ -223,8 +223,6 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    return NOOP;
-
     if (not this->usrp) {
         return NOOP;
     }
