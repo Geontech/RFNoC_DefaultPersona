@@ -67,7 +67,10 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         std::map<CORBA::ULong, ResourceInfo *> hashToResourceInfo;
         std::map<std::string, ResourceInfo *> IDToResourceInfo;
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToID;
+        boost::condition_variable resourceAvailable;
+        bool resourceHeld;
         boost::mutex resourceLock;
+        bool terminateWaiting;
         uhd::device3::sptr usrp;
         uhd::device_addr_t usrpAddress;
 };

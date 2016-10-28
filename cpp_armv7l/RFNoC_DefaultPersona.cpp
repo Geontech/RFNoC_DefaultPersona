@@ -229,6 +229,14 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
     boost::mutex::scoped_lock lock(this->resourceLock);
 
+    while (this->terminateWaiting or this->resourceHeld) {
+        this->resourceAvailable.wait(lock);
+    }
+
+    this->resourceHeld = true;
+
+    lock.unlock();
+
     // Iterate over the resources to determine connections
     for (std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.begin(); it != this->IDToResourceInfo.end(); it++) {
         ResourceInfo *resourceInfo = it->second;
@@ -414,6 +422,14 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         }
     }
 
+    lock.lock();
+
+    this->resourceHeld = false;
+
+    this->resourceAvailable.notify_all();
+
+    lock.unlock();
+
     return NOOP;
 }
 
@@ -499,8 +515,20 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
 
+    this->terminateWaiting = true;
+
+    while (this->resourceHeld) {
+        this->resourceAvailable.wait(lock);
+    }
+
+    this->resourceHeld = true;
+
     if (this->pidToID.find(processId) == this->pidToID.end()) {
         LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to terminate a process with an ID not tracked by this Device");
+        this->resourceHeld = false;
+        this->terminateWaiting = false;
+        this->resourceAvailable.notify_all();
+        lock.unlock();
         throw CF::ExecutableDevice::InvalidProcess();
     }
 
@@ -592,6 +620,11 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     // Unmap the PID from the component identifier
     this->pidToID.erase(processId);
+
+    this->resourceHeld = false;
+    this->terminateWaiting = false;
+    this->resourceAvailable.notify_all();
+    lock.unlock();
 
     // Call the parent terminate
     RFNoC_DefaultPersona_persona_base::terminate(processId);
