@@ -250,8 +250,8 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
             BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
 
-            if (port->_is_nil()) {
-                LOG_DEBUG(RFNoC_DefaultPersona_i, "A port went down, skipping");
+            if (port->_non_existent()) {
+                LOG_DEBUG(RFNoC_DefaultPersona_i, "The port no longer exists");
                 continue;
             }
 
