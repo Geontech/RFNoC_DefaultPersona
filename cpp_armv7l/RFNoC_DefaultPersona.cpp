@@ -249,6 +249,12 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         // Iterate over the uses ports
         for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
             BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
+
+            if (port->_is_nil()) {
+                LOG_DEBUG(RFNoC_DefaultPersona_i, "A port went down, skipping");
+                continue;
+            }
+
             ExtendedCF::UsesConnectionSequence *connections = port->connections();
             bool foundConnection = false;
 
