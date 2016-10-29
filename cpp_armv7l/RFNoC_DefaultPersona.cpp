@@ -62,6 +62,8 @@ void RFNoC_DefaultPersona_i::construct()
 
     LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << hw_load_status.hardware_id);
 
+    this->setThreadDelay(1.0);
+
     this->start();
 }
 
