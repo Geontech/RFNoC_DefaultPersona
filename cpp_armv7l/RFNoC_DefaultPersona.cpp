@@ -325,7 +325,11 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
                                 std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), resourceInfo->blockID);
 
-                                blockList->insert(++blockLoc, providesResourceInfo->blockID);
+                                if (blockLoc != blockList->end()) {
+                                    blockList->insert(++blockLoc, providesResourceInfo->blockID);
+                                } else {
+                                    blockList->push_back(providesResourceInfo->blockID);
+                                }
 
                                 this->graphUpdated[graph->get_name()] = true;
                             }
