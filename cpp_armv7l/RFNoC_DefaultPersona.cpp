@@ -308,6 +308,8 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                                 blockList->push_back(resourceInfo->blockID);
                                 blockList->push_back(providesResourceInfo->blockID);
 
+                                this->blockToList[resourceInfo->blockID] = blockList;
+                                this->blockToList[providesResourceInfo->blockID] = blockList;
                                 this->graphToList[graph->get_name()] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
@@ -326,11 +328,13 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                                 std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), resourceInfo->blockID);
 
                                 if (blockLoc != blockList->end()) {
-                                    blockList->insert(++blockLoc, providesResourceInfo->blockID);
+                                    blockLoc++;
+                                    blockList->insert(blockLoc, providesResourceInfo->blockID);
                                 } else {
                                     blockList->push_back(providesResourceInfo->blockID);
                                 }
 
+                                this->blockToList[providesResourceInfo->blockID] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
                             // Add the uses block to the provides graph
@@ -349,6 +353,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
                                 blockList->insert(blockLoc, resourceInfo->blockID);
 
+                                this->blockToList[providesResourceInfo->blockID] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
                             // Merge the two graphs?
@@ -365,6 +370,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
                                 blockList->insert(blockLoc, resourceInfo->blockID);
 
+                                this->blockToList[providesResourceInfo->blockID] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
 
