@@ -313,6 +313,23 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                                 this->graphToList[graph->get_name()] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
+                            // Merge the two graphs?
+                            else if (foundProvides and foundUses) {
+                                LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
+
+                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
+
+                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+
+                                std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
+
+                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
+
+                                blockList->insert(blockLoc, resourceInfo->blockID);
+
+                                this->blockToList[providesResourceInfo->blockID] = blockList;
+                                this->graphUpdated[graph->get_name()] = true;
+                            }
                             // Add the provides block to the uses graph
                             else if (foundUses) {
                                 LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the uses graph");
@@ -346,23 +363,6 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                                 graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
 
                                 this->blockToGraph[resourceInfo->blockID] = graph;
-
-                                std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
-
-                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
-
-                                blockList->insert(blockLoc, resourceInfo->blockID);
-
-                                this->blockToList[providesResourceInfo->blockID] = blockList;
-                                this->graphUpdated[graph->get_name()] = true;
-                            }
-                            // Merge the two graphs?
-                            else {
-                                LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
-
-                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
-
-                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
 
                                 std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
 
