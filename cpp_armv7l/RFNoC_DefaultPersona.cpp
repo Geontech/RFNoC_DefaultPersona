@@ -404,6 +404,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
                     blockList->push_back(resourceInfo->blockID);
 
+                    this->blockToList[resourceInfo->blockID] = blockList;
                     this->graphToList[graph->get_name()] = blockList;
                     this->graphUpdated[graph->get_name()] = true;
                 }
