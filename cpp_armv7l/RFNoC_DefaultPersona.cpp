@@ -313,22 +313,28 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                                 this->graphToList[graph->get_name()] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
-                            // Merge the two graphs?
+                            // Merge the two lists
                             else if (foundProvides and foundUses) {
                                 LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
 
-                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
+                                uhd::rfnoc::graph::sptr usesGraph = this->blockToGraph[resourceInfo->blockID];
+                                uhd::rfnoc::graph::sptr providesGraph = this->blockToGraph[providesResourceInfo->blockID];
 
-                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+                                usesGraph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
 
-                                std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
+                                std::list<std::string> *usesBlockList = this->blockToList[resourceInfo->blockID];
+                                std::list<std::string> *providesBlockList = this->blockToList[providesResourceInfo->blockID];
 
-                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
+                                usesBlockList->insert(usesBlockList->end(), providesBlockList->begin(), providesBlockList->end());
 
-                                blockList->insert(blockLoc, resourceInfo->blockID);
+                                for (std::list<std::string>::iterator listIt = providesBlockList->begin(); listIt != providesBlockList->end(); ++listIt) {
+                                    this->blockToList[*listIt] = usesBlockList;
+                                }
 
-                                this->blockToList[providesResourceInfo->blockID] = blockList;
-                                this->graphUpdated[graph->get_name()] = true;
+                                delete providesBlockList;
+
+                                this->graphToList[providesGraph->get_name()] = usesBlockList;
+                                this->graphUpdated[usesGraph->get_name()] = true;
                             }
                             // Add the provides block to the uses graph
                             else if (foundUses) {
