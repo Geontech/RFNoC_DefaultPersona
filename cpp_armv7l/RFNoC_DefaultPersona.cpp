@@ -335,6 +335,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
                                 this->graphToList[providesGraph->get_name()] = usesBlockList;
                                 this->graphUpdated[usesGraph->get_name()] = true;
+                                this->graphUpdated[providesGraph->get_name()] = false;
                             }
                             // Add the provides block to the uses graph
                             else if (foundUses) {
