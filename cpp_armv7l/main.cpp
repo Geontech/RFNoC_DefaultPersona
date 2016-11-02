@@ -42,9 +42,13 @@ extern "C" {
         //      Example:
         //         devicePtr->setSharedAPI(sharedAPI);
         devicePtr->setParentDevice(parentDevice);
+        std::cout << "************************A********************" << std::endl;
         devicePtr->setHwLoadStatusCallback(hwLoadStatusCb);
+        std::cout << "************************B********************" << std::endl;
         devicePtr->setConnectRadioRXCallback(connectRadioRXCb);
+        std::cout << "************************C********************" << std::endl;
         devicePtr->setConnectRadioTXCallback(connectRadioTXCb);
+        std::cout << "************************D********************" << std::endl;
         devicePtr->setUsrpAddress(usrpAddress);
 
         return devicePtr;
