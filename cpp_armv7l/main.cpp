@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 }
 
 extern "C" {
-    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, hwLoadStatusCallback cb, uhd::device_addr_t usrpAddress) {
+    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, hwLoadStatusCallback hwLoadStatusCb, connectRadioRXCallback connectRadioRXCb, connectRadioTXCallback connectRadioTXCb, uhd::device_addr_t usrpAddress) {
 
         struct sigaction sa;
         sa.sa_handler = signal_catcher;
@@ -42,7 +42,9 @@ extern "C" {
         //      Example:
         //         devicePtr->setSharedAPI(sharedAPI);
         devicePtr->setParentDevice(parentDevice);
-        devicePtr->setHwLoadStatusCallback(cb);
+        devicePtr->setHwLoadStatusCallback(hwLoadStatusCb);
+        devicePtr->setConnectRadioRXCallback(connectRadioRXCb);
+        devicePtr->setConnectRadioTXCallback(connectRadioTXCb);
         devicePtr->setUsrpAddress(usrpAddress);
 
         return devicePtr;

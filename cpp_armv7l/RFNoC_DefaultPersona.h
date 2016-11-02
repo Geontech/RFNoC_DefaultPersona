@@ -2,7 +2,7 @@
 #define RFNOC_DEFAULTPERSONA_I_IMPL_H
 
 #include "RFNoC_DefaultPersona_persona_base.h"
-#include "HwLoadStatus.h"
+#include "RFNoC_Persona.h"
 
 #include <bulkio/BULKIO_Interfaces.h>
 #include <uhd/device3.hpp>
@@ -10,6 +10,7 @@
 struct ResourceInfo {
     public:
         std::string blockID;
+        std::vector<CORBA::ULong> providesPortHashes;
         Resource_impl *resource;
         setStreamerCallback setRxStreamerCb;
         setStreamerCallback setTxStreamerCb;
@@ -44,6 +45,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
                     throw ( CF::Device::InvalidState, CF::ExecutableDevice::InvalidProcess, CORBA::SystemException);
 
         void setBlockIDMapping(const std::string &componentID, const std::string &blockID);
+        void setConnectRadioRXCallback(connectRadioRXCallback cb);
+        void setConnectRadioTXCallback(connectRadioTXCallback cb);
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
         void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
         void setSetTxStreamer(const std::string &componentID, setStreamerCallback cb);
@@ -54,13 +57,12 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void hwLoadRequest(CF::Properties& request);
 
     private:
-        std::vector<std::string> listNoCBlocks();
-
-    private:
         std::map<std::pair<CORBA::ULong, std::string>, bool> areConnected;
         std::map<std::string, uhd::rfnoc::graph::sptr> blockToGraph;
         std::map<std::string, std::list<std::string> *> blockToList;
         std::map<std::string, ResourceInfo *> blockToResourceInfo;
+        connectRadioRXCallback connectRadioRXCb;
+        connectRadioTXCallback connectRadioTXCb;
         bool enabled;
         std::map<std::string, std::list<std::string> *> graphToList;
         std::map<std::string, bool> graphUpdated;

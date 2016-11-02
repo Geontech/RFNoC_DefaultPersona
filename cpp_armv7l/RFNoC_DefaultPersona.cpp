@@ -67,160 +67,6 @@ void RFNoC_DefaultPersona_i::construct()
     this->start();
 }
 
-/***********************************************************************************************
-
-    Basic functionality:
-
-        The service function is called by the serviceThread object (of type ProcessThread).
-        This call happens immediately after the previous call if the return value for
-        the previous call was NORMAL.
-        If the return value for the previous call was NOOP, then the serviceThread waits
-        an amount of time defined in the serviceThread's constructor.
-        
-    SRI:
-        To create a StreamSRI object, use the following code:
-                std::string stream_id = "testStream";
-                BULKIO::StreamSRI sri = bulkio::sri::create(stream_id);
-
-	Time:
-	    To create a PrecisionUTCTime object, use the following code:
-                BULKIO::PrecisionUTCTime tstamp = bulkio::time::utils::now();
-
-        
-    Ports:
-
-        Data is passed to the serviceFunction through the getPacket call (BULKIO only).
-        The dataTransfer class is a port-specific class, so each port implementing the
-        BULKIO interface will have its own type-specific dataTransfer.
-
-        The argument to the getPacket function is a floating point number that specifies
-        the time to wait in seconds. A zero value is non-blocking. A negative value
-        is blocking.  Constants have been defined for these values, bulkio::Const::BLOCKING and
-        bulkio::Const::NON_BLOCKING.
-
-        Each received dataTransfer is owned by serviceFunction and *MUST* be
-        explicitly deallocated.
-
-        To send data using a BULKIO interface, a convenience interface has been added 
-        that takes a std::vector as the data input
-
-        NOTE: If you have a BULKIO dataSDDS or dataVITA49 port, you must manually call 
-              "port->updateStats()" to update the port statistics when appropriate.
-
-        Example:
-            // this example assumes that the device has two ports:
-            //  A provides (input) port of type bulkio::InShortPort called short_in
-            //  A uses (output) port of type bulkio::OutFloatPort called float_out
-            // The mapping between the port and the class is found
-            // in the device base class header file
-
-            bulkio::InShortPort::dataTransfer *tmp = short_in->getPacket(bulkio::Const::BLOCKING);
-            if (not tmp) { // No data is available
-                return NOOP;
-            }
-
-            std::vector<float> outputData;
-            outputData.resize(tmp->dataBuffer.size());
-            for (unsigned int i=0; i<tmp->dataBuffer.size(); i++) {
-                outputData[i] = (float)tmp->dataBuffer[i];
-            }
-
-            // NOTE: You must make at least one valid pushSRI call
-            if (tmp->sriChanged) {
-                float_out->pushSRI(tmp->SRI);
-            }
-            float_out->pushPacket(outputData, tmp->T, tmp->EOS, tmp->streamID);
-
-            delete tmp; // IMPORTANT: MUST RELEASE THE RECEIVED DATA BLOCK
-            return NORMAL;
-
-        If working with complex data (i.e., the "mode" on the SRI is set to
-        true), the std::vector passed from/to BulkIO can be typecast to/from
-        std::vector< std::complex<dataType> >.  For example, for short data:
-
-            bulkio::InShortPort::dataTransfer *tmp = myInput->getPacket(bulkio::Const::BLOCKING);
-            std::vector<std::complex<short> >* intermediate = (std::vector<std::complex<short> >*) &(tmp->dataBuffer);
-            // do work here
-            std::vector<short>* output = (std::vector<short>*) intermediate;
-            myOutput->pushPacket(*output, tmp->T, tmp->EOS, tmp->streamID);
-
-        Interactions with non-BULKIO ports are left up to the device developer's discretion
-        
-    Messages:
-    
-        To receive a message, you need (1) an input port of type MessageEvent, (2) a message prototype described
-        as a structure property of kind message, (3) a callback to service the message, and (4) to register the callback
-        with the input port.
-        
-        Assuming a property of type message is declared called "my_msg", an input port called "msg_input" is declared of
-        type MessageEvent, create the following code:
-        
-        void RFNoC_DefaultPersona_i::my_message_callback(const std::string& id, const my_msg_struct &msg){
-        }
-        
-        Register the message callback onto the input port with the following form:
-        this->msg_input->registerMessage("my_msg", this, &RFNoC_DefaultPersona_i::my_message_callback);
-        
-        To send a message, you need to (1) create a message structure, (2) a message prototype described
-        as a structure property of kind message, and (3) send the message over the port.
-        
-        Assuming a property of type message is declared called "my_msg", an output port called "msg_output" is declared of
-        type MessageEvent, create the following code:
-        
-        ::my_msg_struct msg_out;
-        this->msg_output->sendMessage(msg_out);
-
-    Properties:
-        
-        Properties are accessed directly as member variables. For example, if the
-        property name is "baudRate", it may be accessed within member functions as
-        "baudRate". Unnamed properties are given the property id as its name.
-        Property types are mapped to the nearest C++ type, (e.g. "string" becomes
-        "std::string"). All generated properties are declared in the base class
-        (RFNoC_DefaultPersona_persona_base).
-    
-        Simple sequence properties are mapped to "std::vector" of the simple type.
-        Struct properties, if used, are mapped to C++ structs defined in the
-        generated file "struct_props.h". Field names are taken from the name in
-        the properties file; if no name is given, a generated name of the form
-        "field_n" is used, where "n" is the ordinal number of the field.
-        
-        Example:
-            // This example makes use of the following Properties:
-            //  - A float value called scaleValue
-            //  - A boolean called scaleInput
-              
-            if (scaleInput) {
-                dataOut[i] = dataIn[i] * scaleValue;
-            } else {
-                dataOut[i] = dataIn[i];
-            }
-            
-        A callback method can be associated with a property so that the method is
-        called each time the property value changes.  This is done by calling 
-        setPropertyChangeListener(<property name>, this, &RFNoC_DefaultPersona_i::<callback method>)
-        in the constructor.
-            
-        Example:
-            // This example makes use of the following Properties:
-            //  - A float value called scaleValue
-            
-        //Add to RFNoC_DefaultPersona.cpp
-        RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(const char *uuid, const char *label) :
-            RFNoC_DefaultPersona_persona_base(uuid, label)
-        {
-            setPropertyChangeListener("scaleValue", this, &RFNoC_DefaultPersona_i::scaleChanged);
-        }
-
-        void RFNoC_DefaultPersona_i::scaleChanged(const std::string& id){
-            std::cout << "scaleChanged scaleValue " << scaleValue << std::endl;
-        }
-            
-        //Add to RFNoC_DefaultPersona.h
-        void scaleChanged(const std::string&);
-        
-        
-************************************************************************************************/
 int RFNoC_DefaultPersona_i::serviceFunction()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
@@ -440,8 +286,46 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                 this->blockToResourceInfo[*it2]->setTxStreamerCb(false);
             }
 
-            this->blockToResourceInfo[it->second->front()]->setTxStreamerCb(true);
-            this->blockToResourceInfo[it->second->back()]->setRxStreamerCb(true);
+            // Try to connect to programmable device first
+            // RX Radio
+            uhd::rfnoc::block_id_t firstBlockID(it->second->front());
+            ResourceInfo *firstResourceInfo = this->blockToResourceInfo[firstBlockID.to_string()];
+            bool firstConnected = false;
+
+            for (size_t i = 0; i < firstResourceInfo->providesPortHashes.size(); ++i) {
+                CORBA::ULong hash = firstResourceInfo->providesPortHashes[i];
+
+                if (this->connectRadioRXCb(hash, firstBlockID, uhd::rfnoc::ANY_PORT)) {
+                    firstConnected = true;
+                    break;
+                }
+            }
+
+            if (not firstConnected) {
+                this->blockToResourceInfo[it->second->front()]->setTxStreamerCb(true);
+            }
+
+            // TX Radio
+            uhd::rfnoc::block_id_t lastBlockID(it->second->back());
+            ResourceInfo *lastResourceInfo = this->blockToResourceInfo[lastBlockID.to_string()];
+            bool lastConnected = false;
+
+            for (size_t i = 0; i < lastResourceInfo->usesPorts.size(); ++i) {
+                ExtendedCF::UsesConnectionSequence *connections = lastResourceInfo->usesPorts[i]->connections();
+
+                for (size_t j = 0; j < connections->length(); ++j) {
+                    ExtendedCF::UsesConnection connection = connections->operator [](j);
+
+                    if (this->connectRadioTXCb(connection.connectionId._ptr, lastBlockID, uhd::rfnoc::ANY_PORT)) {
+                        lastConnected = true;
+                        break;
+                    }
+                }
+            }
+
+            if (not lastConnected) {
+                this->blockToResourceInfo[it->second->back()]->setRxStreamerCb(true);
+            }
 
             LOG_DEBUG(RFNoC_DefaultPersona_i, ss.str());
             LOG_DEBUG(RFNoC_DefaultPersona_i, "");
@@ -675,6 +559,20 @@ void RFNoC_DefaultPersona_i::setBlockIDMapping(const std::string &componentID, c
     this->blockToResourceInfo[blockID] = this->IDToResourceInfo[componentID];
 }
 
+void RFNoC_DefaultPersona_i::setConnectRadioRXCallback(connectRadioRXCallback cb)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    this->connectRadioRXCb = cb;
+}
+
+void RFNoC_DefaultPersona_i::setConnectRadioTXCallback(connectRadioTXCallback cb)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    this->connectRadioTXCb = cb;
+}
+
 void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
@@ -722,19 +620,12 @@ void RFNoC_DefaultPersona_i::setUsrpAddress(uhd::device_addr_t usrpAddress)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    //this->usrp = uhd::device3::make(usrpAddress);
-
     this->usrpAddress = usrpAddress;
-
-    //std::vector<std::string> NoCBlocks = listNoCBlocks();
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    // Touch the usrp pointer to validate it
-    //this->usrp->get_tree();
 
     // Create a new resource info
     ResourceInfo *resourceInfo = new ResourceInfo;
@@ -792,7 +683,13 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
         LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
         LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
 
-        this->hashToResourceInfo[info.obj_ptr->_hash(1024)] = resourceInfo;
+        CORBA::ULong hash = info.obj_ptr->_hash(1024);
+        this->hashToResourceInfo[hash] = resourceInfo;
+
+        // Store the provides port hashes
+        if (strstr(info.direction._ptr, "Provides") && strstr(info.repid._ptr, "BULKIO")) {
+            resourceInfo->providesPortHashes.push_back(hash);
+        }
 
         // Store the uses port pointers
         if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
@@ -820,23 +717,4 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request)
     LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << this->hw_load_status.hardware_id);
     request[3].id = CORBA::string_dup("load_filepath");
     request[3].value <<= ossie::corba::returnString(this->hw_load_status.load_filepath.c_str());
-}
-
-std::vector<std::string> RFNoC_DefaultPersona_i::listNoCBlocks()
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    std::vector<std::string> NoCBlocks;
-
-    uhd::property_tree::sptr tree = this->usrp->get_tree();
-
-    std::vector<std::string> xBarItems = tree->list("/mboards/0/xbar/");
-
-    for (size_t i = 0; i < xBarItems.size(); ++i) {
-        LOG_DEBUG(RFNoC_DefaultPersona_i, xBarItems[i]);
-
-        NoCBlocks.push_back("0/" + xBarItems[i]);
-    }
-
-    return NoCBlocks;
 }
