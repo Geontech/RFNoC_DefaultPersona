@@ -532,23 +532,8 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    // Create a new resource info
-    //ResourceInfo *resourceInfo = new ResourceInfo;
-
-    // Map the component ID to the resource info
-    std::string componentIdentifier;
-
-    for (size_t i = 0; i < size_t(argc); i+=2) {
-        if (strcmp(argv[i], "COMPONENT_IDENTIFIER") == 0) {
-            componentIdentifier = argv[i+1];
-            break;
-        }
-    }
-
     // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
-
-    //this->IDToResourceInfo[componentIdentifier] = resourceInfo;
 
     // Construct the resource
     Resource_impl *resource;
@@ -567,21 +552,21 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     } catch (...) {
         LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor threw an exception");
 
-        //delete resourceInfo;
-
-        //this->IDToResourceInfo.erase(componentIdentifier);
-
         return NULL;
     }
 
     this->resourceManager->addResource(resource);
 
+    LOG_INFO(RFNoC_DefaultPersona_i, "Casting the resource as an RF-Noc Component Interface");
+
     // Activate the component
     RFNoC_ComponentInterface *component = (RFNoC_ComponentInterface *) resource;
 
+    LOG_INFO(RFNoC_DefaultPersona_i, "Activating the component");
+
     component->activate();
 
-    //resourceInfo->resource = resource;
+    LOG_INFO(RFNoC_DefaultPersona_i, "Component activated");
 
     return resource;
 }
