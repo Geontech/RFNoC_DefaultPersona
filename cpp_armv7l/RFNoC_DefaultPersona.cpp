@@ -15,7 +15,8 @@ PREPARE_LOGGING(RFNoC_DefaultPersona_i)
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl),
-    enabled(false)
+    enabled(false),
+    resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
@@ -23,7 +24,8 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, compDev),
-    enabled(false)
+    enabled(false),
+    resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
@@ -31,7 +33,8 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities),
-    enabled(false)
+    enabled(false),
+    resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
@@ -39,7 +42,8 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev) :
     RFNoC_DefaultPersona_persona_base(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev),
-    enabled(false)
+    enabled(false),
+    resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
     construct();
@@ -48,6 +52,10 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
 RFNoC_DefaultPersona_i::~RFNoC_DefaultPersona_i()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    if (this->resourceManager) {
+        delete this->resourceManager;
+    }
 }
 
 void RFNoC_DefaultPersona_i::construct()
@@ -85,8 +93,10 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
     lock.unlock();
 
+    this->resourceManager->update();
+
     // Iterate over the resources to determine connections
-    for (std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.begin(); it != this->IDToResourceInfo.end(); it++) {
+    /*for (std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.begin(); it != this->IDToResourceInfo.end(); it++) {
         ResourceInfo *resourceInfo = it->second;
         Resource_impl *resource = resourceInfo->resource;
 
@@ -130,13 +140,15 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                             LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " was not connected to " << providesResource->_identifier);
 
                             // Connect things
-                            if (resourceInfo->blockID.empty() or providesResourceInfo->blockID.empty()) {
+                            if (resourceInfo->blockIDs.empty() or providesResourceInfo->blockIDs.empty()) {
                                 LOG_DEBUG(RFNoC_DefaultPersona_i, "RF-NoC Block IDs aren't set yet, cannot connect");
                                 continue;
                             }
 
-                            bool foundProvides = (this->blockToGraph.find(providesResourceInfo->blockID) != this->blockToGraph.end());
-                            bool foundUses = (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end());
+                            uhd::rfnoc::block_id_t providesBlockID = providesResourceInfo->blockIDs.front();
+                            uhd::rfnoc::block_id_t usesBlockID = resourceInfo->blockIDs.back();
+                            bool foundProvides = (this->blockToGraph.find(providesBlockID) != this->blockToGraph.end());
+                            bool foundUses = (this->blockToGraph.find(usesBlockID) != this->blockToGraph.end());
 
                             // Create a new graph
                             if (not foundProvides and not foundUses) {
@@ -144,18 +156,18 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
                                 uhd::rfnoc::graph::sptr graph = this->usrp->create_graph(frontend::uuidGenerator());
 
-                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+                                graph->connect(usesBlockID, providesBlockID);
 
-                                this->blockToGraph[resourceInfo->blockID] = graph;
-                                this->blockToGraph[providesResourceInfo->blockID] = graph;
+                                this->blockToGraph[usesBlockID] = graph;
+                                this->blockToGraph[providesBlockID] = graph;
 
                                 std::list<std::string> *blockList = new std::list<std::string>;
 
-                                blockList->push_back(resourceInfo->blockID);
-                                blockList->push_back(providesResourceInfo->blockID);
+                                blockList->push_back(usesBlockID);
+                                blockList->push_back(providesBlockID);
 
-                                this->blockToList[resourceInfo->blockID] = blockList;
-                                this->blockToList[providesResourceInfo->blockID] = blockList;
+                                this->blockToList[usesBlockID] = blockList;
+                                this->blockToList[providesBlockID] = blockList;
                                 this->graphToList[graph->get_name()] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
@@ -163,13 +175,13 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                             else if (foundProvides and foundUses) {
                                 LOG_DEBUG(RFNoC_DefaultPersona_i, "Connecting two graphs?");
 
-                                uhd::rfnoc::graph::sptr usesGraph = this->blockToGraph[resourceInfo->blockID];
-                                uhd::rfnoc::graph::sptr providesGraph = this->blockToGraph[providesResourceInfo->blockID];
+                                uhd::rfnoc::graph::sptr usesGraph = this->blockToGraph[usesBlockID];
+                                uhd::rfnoc::graph::sptr providesGraph = this->blockToGraph[providesBlockID];
 
-                                usesGraph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+                                usesGraph->connect(usesBlockID, providesBlockID);
 
-                                std::list<std::string> *usesBlockList = this->blockToList[resourceInfo->blockID];
-                                std::list<std::string> *providesBlockList = this->blockToList[providesResourceInfo->blockID];
+                                std::list<std::string> *usesBlockList = this->blockToList[usesBlockID];
+                                std::list<std::string> *providesBlockList = this->blockToList[providesBlockID];
 
                                 usesBlockList->insert(usesBlockList->end(), providesBlockList->begin(), providesBlockList->end());
 
@@ -187,43 +199,43 @@ int RFNoC_DefaultPersona_i::serviceFunction()
                             else if (foundUses) {
                                 LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the uses graph");
 
-                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[resourceInfo->blockID];
+                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[usesBlockID];
 
-                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+                                graph->connect(usesBlockID, providesBlockID);
 
-                                this->blockToGraph[providesResourceInfo->blockID] = graph;
+                                this->blockToGraph[providesBlockID] = graph;
 
-                                std::list<std::string> *blockList = this->blockToList[resourceInfo->blockID];
+                                std::list<std::string> *blockList = this->blockToList[usesBlockID];
 
-                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), resourceInfo->blockID);
+                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), usesBlockID);
 
                                 if (blockLoc != blockList->end()) {
                                     blockLoc++;
-                                    blockList->insert(blockLoc, providesResourceInfo->blockID);
+                                    blockList->insert(blockLoc, providesBlockID);
                                 } else {
-                                    blockList->push_back(providesResourceInfo->blockID);
+                                    blockList->push_back(providesBlockID);
                                 }
 
-                                this->blockToList[providesResourceInfo->blockID] = blockList;
+                                this->blockToList[providesBlockID] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
                             // Add the uses block to the provides graph
                             else if (foundProvides) {
                                 LOG_DEBUG(RFNoC_DefaultPersona_i, "Using the provides graph");
 
-                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[providesResourceInfo->blockID];
+                                uhd::rfnoc::graph::sptr graph = this->blockToGraph[providesBlockID];
 
-                                graph->connect(resourceInfo->blockID, providesResourceInfo->blockID);
+                                graph->connect(usesBlockID, providesBlockID);
 
-                                this->blockToGraph[resourceInfo->blockID] = graph;
+                                this->blockToGraph[usesBlockID] = graph;
 
-                                std::list<std::string> *blockList = this->blockToList[providesResourceInfo->blockID];
+                                std::list<std::string> *blockList = this->blockToList[providesBlockID];
 
-                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesResourceInfo->blockID);
+                                std::list<std::string>::iterator blockLoc = std::find(blockList->begin(), blockList->end(), providesBlockID);
 
-                                blockList->insert(blockLoc, resourceInfo->blockID);
+                                blockList->insert(blockLoc, usesBlockID);
 
-                                this->blockToList[providesResourceInfo->blockID] = blockList;
+                                this->blockToList[providesBlockID] = blockList;
                                 this->graphUpdated[graph->get_name()] = true;
                             }
 
@@ -238,26 +250,32 @@ int RFNoC_DefaultPersona_i::serviceFunction()
             if (connections->length() == 0 or not foundConnection) {
                 LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier << " has no connections to another of this Device's resources");
 
+                if (resourceInfo->blockIDs.empty()) {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "RF-NoC Block ID(s) not set yet, cannot create graph");
+                }
+
+                uhd::rfnoc::block_id_t usesBlockID = resourceInfo->blockIDs.back();
+
                 // Connect things
-                if (resourceInfo->blockID.empty()) {
-                    LOG_DEBUG(RFNoC_DefaultPersona_i, "RF-NoC Block ID is not set yet, cannot create graph");
+                if (usesBlockID.to_string().empty()) {
+                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Last RF-NoC Block ID is not set yet, cannot create graph");
                     continue;
                 }
 
-                bool foundGraph = (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end());
+                bool foundGraph = (this->blockToGraph.find(usesBlockID) != this->blockToGraph.end());
 
                 if (not foundGraph) {
                     LOG_DEBUG(RFNoC_DefaultPersona_i, "Creating a new graph");
 
                     uhd::rfnoc::graph::sptr graph = this->usrp->create_graph(frontend::uuidGenerator());
 
-                    this->blockToGraph[resourceInfo->blockID] = graph;
+                    this->blockToGraph[usesBlockID] = graph;
 
                     std::list<std::string> *blockList = new std::list<std::string>;
 
-                    blockList->push_back(resourceInfo->blockID);
+                    blockList->push_back(usesBlockID);
 
-                    this->blockToList[resourceInfo->blockID] = blockList;
+                    this->blockToList[usesBlockID] = blockList;
                     this->graphToList[graph->get_name()] = blockList;
                     this->graphUpdated[graph->get_name()] = true;
                 }
@@ -332,7 +350,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 
             this->graphUpdated[it->first] = false;
         }
-    }
+    }*/
 
     lock.lock();
 
@@ -372,7 +390,13 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
             allocationSuccess = false;
             attemptToUnprogramParent();
         }
+
+        if (allocationSuccess) {
+            LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
+            this->resourceManager = new RFNoC_ResourceManager(this->usrp);
+        }
     }
+
     return allocationSuccess;
 }
 
@@ -380,6 +404,11 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
         throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CORBA::SystemException) 
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    if (this->resourceManager) {
+        delete this->resourceManager;
+        this->resourceManager = NULL;
+    }
 
     this->enabled = false;
     this->usrp.reset();
@@ -414,7 +443,7 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
         }
     }
 
-    this->pidToID[pid] = componentIdentifier;
+    this->pidToComponentID[pid] = componentIdentifier;
 
     return pid;
 }
@@ -435,7 +464,7 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     this->resourceHeld = true;
 
-    if (this->pidToID.find(processId) == this->pidToID.end()) {
+    if (this->pidToComponentID.find(processId) == this->pidToComponentID.end()) {
         LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to terminate a process with an ID not tracked by this Device");
         this->resourceHeld = false;
         this->terminateWaiting = false;
@@ -445,93 +474,14 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     }
 
     // Get the component identifier associated with this PID
-    std::string ID = this->pidToID[processId];
+    std::string componentID = this->pidToComponentID[processId];
 
-    LOG_DEBUG(RFNoC_DefaultPersona_i, "Terminating component: " << ID);
+    this->resourceManager->removeResource(componentID);
 
-    // Get the resource info associated with the component identifier
-    if (this->IDToResourceInfo.find(ID) != this->IDToResourceInfo.end()) {
-        if (this->IDToResourceInfo[ID] != NULL) {
-            LOG_DEBUG(RFNoC_DefaultPersona_i, "Cleaning up the resource info");
-
-            ResourceInfo *resourceInfo = this->IDToResourceInfo[ID];
-
-            // Clean up the RF-NoC graph, if necessary
-            if (this->blockToGraph.find(resourceInfo->blockID) != this->blockToGraph.end()) {
-                if (this->blockToGraph[resourceInfo->blockID] != NULL) {
-                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Cleaning up the graph info");
-
-                    std::string graphName = this->blockToGraph[resourceInfo->blockID]->get_name();
-
-                    if (this->graphToList.find(graphName) != this->graphToList.end()) {
-                        this->graphToList.erase(graphName);
-                    }
-
-                    if (this->graphUpdated.find(graphName) != this->graphUpdated.end()) {
-                        this->graphUpdated.erase(graphName);
-                    }
-                }
-
-                // Unmap the block ID from the graph
-                this->blockToGraph.erase(resourceInfo->blockID);
-            }
-
-            // Clean up the block list, if necessary
-            if (this->blockToList.find(resourceInfo->blockID) != this->blockToList.end()) {
-                if (this->blockToList[resourceInfo->blockID] != NULL) {
-                    LOG_DEBUG(RFNoC_DefaultPersona_i, "Cleaning up the list info");
-
-                    std::list<std::string> *list = this->blockToList[resourceInfo->blockID];
-                    std::list<std::string>::iterator listIt = std::find(list->begin(), list->end(), resourceInfo->blockID);
-
-                    if (listIt != list->end()) {
-                        list->erase(listIt);
-                    }
-
-                    if (list->empty()) {
-                        delete list;
-                    }
-                }
-
-                // Unmap the block ID from the list
-                this->blockToList.erase(resourceInfo->blockID);
-            }
-
-            // Unmap the port hashes from this resource and to other resources
-            for (size_t i = 0; i < resourceInfo->usesPorts.size(); ++i) {
-                BULKIO::UsesPortStatisticsProvider_ptr port = resourceInfo->usesPorts[i];
-                CORBA::ULong hash = port->_hash(1024);
-
-                LOG_DEBUG(RFNoC_DefaultPersona_i, "Unmapping port with hash " << hash << " from resource info");
-
-                // Unmap the hash from the resource info
-                if (this->hashToResourceInfo.find(hash) != this->hashToResourceInfo.end()) {
-                    this->hashToResourceInfo.erase(hash);
-                }
-
-                // Iterate over the connection indicators, checking the hash against this port's
-                for (std::map<std::pair<CORBA::ULong, std::string>, bool>::iterator it = this->areConnected.begin(); it != this->areConnected.end(); ++it) {
-                    if (it->first.first == hash) {
-                        this->areConnected.erase(it);
-                    }
-                }
-            }
-
-            // Unmap the block ID from the resource info
-            if (this->blockToResourceInfo.find(resourceInfo->blockID) != this->blockToResourceInfo.end()) {
-                this->blockToResourceInfo.erase(resourceInfo->blockID);
-            }
-
-            // Delete the resource info
-            delete resourceInfo;
-        }
-
-        // Unmap the ID from the resource info
-        this->IDToResourceInfo.erase(ID);
-    }
+    LOG_DEBUG(RFNoC_DefaultPersona_i, "Terminating component: " << componentID);
 
     // Unmap the PID from the component identifier
-    this->pidToID.erase(processId);
+    this->pidToComponentID.erase(processId);
 
     this->resourceHeld = false;
     this->terminateWaiting = false;
@@ -540,23 +490,6 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     // Call the parent terminate
     RFNoC_DefaultPersona_persona_base::terminate(processId);
-}
-
-void RFNoC_DefaultPersona_i::setBlockIDMapping(const std::string &componentID, const std::string &blockID)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.find(componentID);
-
-    if (it == this->IDToResourceInfo.end()) {
-        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to set Block ID for unknown component: " << componentID);
-        return;
-    }
-
-    LOG_INFO(RFNoC_DefaultPersona_i, componentID << " -> " << blockID);
-
-    this->IDToResourceInfo[componentID]->blockID = blockID;
-    this->blockToResourceInfo[blockID] = this->IDToResourceInfo[componentID];
 }
 
 void RFNoC_DefaultPersona_i::setConnectRadioRXCallback(connectRadioRXCallback cb)
@@ -588,34 +521,6 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
     cb(hwLoadStatusObject);
 }
 
-void RFNoC_DefaultPersona_i::setSetRxStreamer(const std::string &componentID, setStreamerCallback cb)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.find(componentID);
-
-    if (it == this->IDToResourceInfo.end()) {
-        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to set setRxStreamer for unknown component: " << componentID);
-        return;
-    }
-
-    this->IDToResourceInfo[componentID]->setRxStreamerCb = cb;
-}
-
-void RFNoC_DefaultPersona_i::setSetTxStreamer(const std::string &componentID, setStreamerCallback cb)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    std::map<std::string, ResourceInfo *>::iterator it = this->IDToResourceInfo.find(componentID);
-
-    if (it == this->IDToResourceInfo.end()) {
-        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to set setTxStreamer for unknown component: " << componentID);
-        return;
-    }
-
-    this->IDToResourceInfo[componentID]->setTxStreamerCb = cb;
-}
-
 void RFNoC_DefaultPersona_i::setUsrpAddress(uhd::device_addr_t usrpAddress)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
@@ -628,7 +533,7 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     // Create a new resource info
-    ResourceInfo *resourceInfo = new ResourceInfo;
+    //ResourceInfo *resourceInfo = new ResourceInfo;
 
     // Map the component ID to the resource info
     std::string componentIdentifier;
@@ -643,15 +548,15 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     // Lock to prevent the service function from using this resource
     boost::mutex::scoped_lock lock(this->resourceLock);
 
-    this->IDToResourceInfo[componentIdentifier] = resourceInfo;
+    //this->IDToResourceInfo[componentIdentifier] = resourceInfo;
 
     // Construct the resource
     Resource_impl *resource;
 
     try {
-        blockIDCallback blockIdCb = boost::bind(&RFNoC_DefaultPersona_i::setBlockIDMapping, this, _1, _2);
-        setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_DefaultPersona_i::setSetRxStreamer, this, _1, _2);
-        setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_DefaultPersona_i::setSetTxStreamer, this, _1, _2);
+        blockIDCallback blockIdCb = boost::bind(&RFNoC_ResourceManager::setBlockIDMapping, this->resourceManager, _1, _2);
+        setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetRxStreamer, this->resourceManager, _1, _2);
+        setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetTxStreamer, this->resourceManager, _1, _2);
 
         resource = fnptr(argc, argv, this, this->usrpAddress, blockIdCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
@@ -662,42 +567,16 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     } catch (...) {
         LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor threw an exception");
 
-        delete resourceInfo;
+        //delete resourceInfo;
 
-        this->IDToResourceInfo.erase(componentIdentifier);
+        //this->IDToResourceInfo.erase(componentIdentifier);
 
         return NULL;
     }
 
-    resourceInfo->resource = resource;
+    this->resourceManager->addResource(resource);
 
-    // Map the port hashes
-    CF::PortSet::PortInfoSequence *portSet = resource->getPortSet();
-
-    LOG_DEBUG(RFNoC_DefaultPersona_i, resource->_identifier);
-
-    for (size_t i = 0; i < portSet->length(); ++i) {
-        CF::PortSet::PortInfoType info = portSet->operator [](i);
-
-        LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Name: " << info.name._ptr);
-        LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Direction: " << info.direction._ptr);
-        LOG_DEBUG(RFNoC_DefaultPersona_i, "Port Repository: " << info.repid._ptr);
-
-        CORBA::ULong hash = info.obj_ptr->_hash(1024);
-        this->hashToResourceInfo[hash] = resourceInfo;
-
-        // Store the provides port hashes
-        if (strstr(info.direction._ptr, "Provides") && strstr(info.repid._ptr, "BULKIO")) {
-            resourceInfo->providesPortHashes.push_back(hash);
-        }
-
-        // Store the uses port pointers
-        if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
-            BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(resource->getPort(info.name._ptr));
-
-            resourceInfo->usesPorts.push_back(usesPort);
-        }
-    }
+    //resourceInfo->resource = resource;
 
     return resource;
 }
