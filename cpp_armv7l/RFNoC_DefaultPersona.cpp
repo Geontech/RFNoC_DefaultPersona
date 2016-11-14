@@ -576,6 +576,11 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
 
     this->resourceManager->addResource(resource);
 
+    // Activate the component
+    RFNoC_ComponentInterface *component = (RFNoC_ComponentInterface *) resource;
+
+    component->activate();
+
     //resourceInfo->resource = resource;
 
     return resource;
