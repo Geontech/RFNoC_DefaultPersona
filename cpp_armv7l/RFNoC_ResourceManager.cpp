@@ -100,17 +100,13 @@ bool RFNoC_ResourceManager::update()
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
     bool updatedAny = false;
-    //std::vector<RFNoC_ResourceList *> updatedResourcesLists;
-    std::map<RFNoC_ResourceList *, std::vector<RFNoC_Resource *> > updatedResourcesLists;
+    std::vector<RFNoC_ResourceList *> updatedResourcesLists;
 
     for (RFNoC_ListMap::iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
-        std::vector<RFNoC_Resource *> updatedResources = it->second->update();
-
-        bool updated = (updatedResources.size() != 0);
+        bool updated = it->second->update();
 
         if (updated) {
-
-            updatedResourcesLists[it->second] = updatedResources;;
+            updatedResourcesLists.push_back(it->second);
         }
 
         updatedAny |= updated;
@@ -118,9 +114,9 @@ bool RFNoC_ResourceManager::update()
 
     std::map<RFNoC_ResourceList *, RFNoC_ResourceList *> remappedList;
 
-    for (std::map<RFNoC_ResourceList *, std::vector<RFNoC_Resource *> >::iterator it = updatedResourcesLists.begin(); it != updatedResourcesLists.end(); ++it) {
+    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourcesLists.begin(); it != updatedResourcesLists.end(); ++it) {
         bool foundConnection = false;
-        RFNoC_ResourceList *updatedResourceList = it->first;
+        RFNoC_ResourceList *updatedResourceList = *it;
 
         std::map<RFNoC_ResourceList *, RFNoC_ResourceList *>::iterator remappedIt = remappedList.find(updatedResourceList);
 
@@ -154,47 +150,47 @@ bool RFNoC_ResourceManager::update()
 
         if (foundConnection) {
             updatedResourcesLists.erase(it);
-        } else {
-            // TODO: Support updating the vector of RFNoC_Resources for multiple changes at once
-            std::vector<RFNoC_Resource *> updatedResources = it->second;
+        }
+    }
 
-            // Any RFNoC_Resources left should be connected to the radio or set as streamers
-            for (size_t i = 0; i < updatedResources.size(); ++i) {
-                RFNoC_Resource *resource = updatedResources[i];
+    // Anything left should be connected to the radio or set as streamers
+    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourcesLists.begin(); it != updatedResourcesLists.end(); ++it) {
+        // TODO: Support updating the vector of RFNoC_Resources for multiple changes at once
+        RFNoC_ResourceList *updatedResourceList = *it;
+        RFNoC_Resource *providesResource = updatedResourceList->getProvidesResource();
+        RFNoC_Resource *usesResource = updatedResourceList->getUsesResource();
 
-                // Try to connect to programmable device first
-                // RX Radio
-                std::vector<CORBA::ULong> providesHashes;
-                bool firstConnected = false;
+        // Try to connect to programmable device first
+        // RX Radio
+        std::vector<CORBA::ULong> providesHashes = providesResource->getProvidesHashes();
+        bool firstConnected = false;
 
-                for (size_t j = 0; j < providesHashes.size(); ++j) {
-                    CORBA::ULong hash = providesHashes[i];
+        for (size_t j = 0; j < providesHashes.size(); ++j) {
+            CORBA::ULong hash = providesHashes[j];
 
-                    if (this->connectRadioRXCb(hash, resource->getProvidesBlock(), uhd::rfnoc::ANY_PORT)) {
-                        firstConnected = true;
-                        break;
-                    }
-                }
-
-                if (not firstConnected) {
-                    resource->setTxStreamer(true);
-                }
-
-                // TX Radio
-                std::vector<std::string> connectionIDs = resource->getConnectionIDs();
-                bool lastConnected = false;
-
-                for (size_t j = 0; j < connectionIDs.size(); ++j) {
-                    if (this->connectRadioTXCb(connectionIDs[j], resource->getUsesBlock(), uhd::rfnoc::ANY_PORT)) {
-                        lastConnected = true;
-                        break;
-                    }
-                }
-
-                if (not lastConnected) {
-                    resource->setRxStreamer(true);
-                }
+            if (this->connectRadioRXCb(hash, providesResource->getProvidesBlock(), uhd::rfnoc::ANY_PORT)) {
+                firstConnected = true;
+                break;
             }
+        }
+
+        if (not firstConnected) {
+            providesResource->setTxStreamer(true);
+        }
+
+        // TX Radio
+        std::vector<std::string> connectionIDs = usesResource->getConnectionIDs();
+        bool lastConnected = false;
+
+        for (size_t j = 0; j < connectionIDs.size(); ++j) {
+            if (this->connectRadioTXCb(connectionIDs[j], usesResource->getUsesBlock(), uhd::rfnoc::ANY_PORT)) {
+                lastConnected = true;
+                break;
+            }
+        }
+
+        if (not lastConnected) {
+            usesResource->setRxStreamer(true);
         }
     }
 

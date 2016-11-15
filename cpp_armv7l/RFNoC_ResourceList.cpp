@@ -152,7 +152,7 @@ void RFNoC_ResourceList::removeResource(const std::string &resourceID)
     this->idToResource.erase(resourceID);
 }
 
-std::vector<RFNoC_Resource *> RFNoC_ResourceList::update()
+bool RFNoC_ResourceList::update()
 {
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
 
@@ -228,7 +228,7 @@ std::vector<RFNoC_Resource *> RFNoC_ResourceList::update()
         }
     }
 
-    return updatedResources;
+    return (updatedResources.size() != 0);
 }
 
 void RFNoC_ResourceList::setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs)
