@@ -54,6 +54,11 @@ Resource_impl* RFNoC_ResourceList::addResource(int argc, char* argv[], Construct
         this->idToResource.erase(resourceID);
     }
 
+    // The first resource always goes in the list
+    if (this->resourceList.empty()) {
+        this->resourceList.push_back(newResource);
+    }
+
     return resource;
 }
 
