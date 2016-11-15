@@ -171,6 +171,11 @@ bool RFNoC_ResourceList::update()
         bool foundConnection = false;
 
         for (RFNoC_ResourceMap::iterator it2 = this->idToResource.begin(); it2 != this->idToResource.end(); ++it2) {
+            if (updatedResource->id() == it2->second->id()) {
+                LOG_DEBUG(RFNoC_ResourceList, "Skipping check for connect for this resource. Feedback not currently available.");
+                continue;
+            }
+
             if (updatedResource->connect(*it2->second)) {
                 std::list<RFNoC_Resource *>::iterator providesListIt, usesListIt;
 
