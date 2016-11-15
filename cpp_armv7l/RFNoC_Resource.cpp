@@ -233,6 +233,15 @@ void RFNoC_Resource::setBlockIDs(const std::vector<uhd::rfnoc::block_id_t> &bloc
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
+    for (size_t i = 0; i < blockIDs.size(); ++i) {
+        std::string blockID = blockIDs[i].get();
+
+        if (blockID.find("Radio") or blockID.find("DDC") or blockID.find("DUC")) {
+            LOG_ERROR(RFNoC_Resource, "Unable to claim RF-NoC Resource with ID: " << blockID);
+            throw std::exception();
+        }
+    }
+
     this->blockIDs = blockIDs;
 }
 

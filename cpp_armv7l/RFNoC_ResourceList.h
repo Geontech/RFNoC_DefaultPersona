@@ -34,7 +34,7 @@ class RFNoC_ResourceList
         bool hasResource(const RFNoC_Resource *resource);
         void merge(RFNoC_ResourceList *providesList);
         void removeResource(const std::string &resourceID);
-        bool update();
+        std::vector<RFNoC_Resource *> update();
 
         void setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
         void setSetRxStreamer(const std::string &resourceID, setStreamerCallback cb);

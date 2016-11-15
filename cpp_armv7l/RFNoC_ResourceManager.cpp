@@ -98,13 +98,17 @@ bool RFNoC_ResourceManager::update()
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
     bool updatedAny = false;
-    std::vector<RFNoC_ResourceList *> updatedResourcesLists;
+    //std::vector<RFNoC_ResourceList *> updatedResourcesLists;
+    std::map<RFNoC_ResourceList *, std::vector<RFNoC_Resource *> > updatedResourcesLists;
 
     for (RFNoC_ListMap::iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
-        bool updated = it->second->update();
+        std::vector<RFNoC_Resource *> updatedResources = it->second->update();
+
+        bool updated = (updatedResources.size() != 0);
 
         if (updated) {
-            updatedResourcesLists.push_back(it->second);
+
+            updatedResourcesLists[it->second] = updatedResources;;
         }
 
         updatedAny |= updated;
@@ -112,9 +116,9 @@ bool RFNoC_ResourceManager::update()
 
     std::map<RFNoC_ResourceList *, RFNoC_ResourceList *> remappedList;
 
-    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourcesLists.begin(); it != updatedResourcesLists.end(); ++it) {
+    for (std::map<RFNoC_ResourceList *, std::vector<RFNoC_Resource *> >::iterator it = updatedResourcesLists.begin(); it != updatedResourcesLists.end(); ++it) {
         bool foundConnection = false;
-        RFNoC_ResourceList *updatedResourceList = *it;
+        RFNoC_ResourceList *updatedResourceList = it->first;
 
         std::map<RFNoC_ResourceList *, RFNoC_ResourceList *>::iterator remappedIt = remappedList.find(updatedResourceList);
 
@@ -124,6 +128,11 @@ bool RFNoC_ResourceManager::update()
         }
 
         for (RFNoC_ListMap::iterator it2 = this->idToList.begin(); it2 != this->idToList.end(); ++it2) {
+            if (updatedResourceList->getIDs() == it2->second->getIDs()) {
+                LOG_DEBUG(RFNoC_ResourceManager, "Skipping check for connect for this resource list. Feedback not currently available.");
+                continue;
+            }
+
             if (updatedResourceList->connect(*it2->second)) {
                 // Merge the lists
                 updatedResourceList->merge(it2->second);
@@ -143,6 +152,14 @@ bool RFNoC_ResourceManager::update()
 
         if (foundConnection) {
             updatedResourcesLists.erase(it);
+        } else {
+            // TODO: Support updating the vector of RFNoC_Resources for multiple changes at once
+            std::vector<RFNoC_Resource *> updatedResources = it->second;
+
+            // Any RFNoC_Resources left should be set as streamers
+            for (size_t i = 0; i < updatedResources.size(); ++i) {
+                RFNoC_Resource *resource = updatedResources[i];
+            }
         }
     }
 
