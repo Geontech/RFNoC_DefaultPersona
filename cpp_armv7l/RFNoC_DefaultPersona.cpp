@@ -83,16 +83,6 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         return NOOP;
     }
 
-    boost::mutex::scoped_lock lock(this->resourceLock);
-
-    while (this->terminateWaiting or this->resourceHeld) {
-        this->resourceAvailable.wait(lock);
-    }
-
-    this->resourceHeld = true;
-
-    lock.unlock();
-
     this->resourceManager->update();
 
     // Iterate over the resources to determine connections
@@ -352,13 +342,13 @@ int RFNoC_DefaultPersona_i::serviceFunction()
         }
     }*/
 
-    lock.lock();
+    /*lock.lock();
 
     this->resourceHeld = false;
 
     this->resourceAvailable.notify_all();
 
-    lock.unlock();
+    lock.unlock();*/
 
     return NOOP;
 }
@@ -454,7 +444,7 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     // Lock to prevent the service function from using this resource
-    boost::mutex::scoped_lock lock(this->resourceLock);
+    /*boost::mutex::scoped_lock lock(this->resourceLock);
 
     this->terminateWaiting = true;
 
@@ -462,14 +452,14 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
         this->resourceAvailable.wait(lock);
     }
 
-    this->resourceHeld = true;
+    this->resourceHeld = true;*/
 
     if (this->pidToComponentID.find(processId) == this->pidToComponentID.end()) {
         LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to terminate a process with an ID not tracked by this Device");
-        this->resourceHeld = false;
+        /*this->resourceHeld = false;
         this->terminateWaiting = false;
         this->resourceAvailable.notify_all();
-        lock.unlock();
+        lock.unlock();*/
         throw CF::ExecutableDevice::InvalidProcess();
     }
 
@@ -483,10 +473,10 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     // Unmap the PID from the component identifier
     this->pidToComponentID.erase(processId);
 
-    this->resourceHeld = false;
+    /*this->resourceHeld = false;
     this->terminateWaiting = false;
     this->resourceAvailable.notify_all();
-    lock.unlock();
+    lock.unlock();*/
 
     // Call the parent terminate
     RFNoC_DefaultPersona_persona_base::terminate(processId);
@@ -533,7 +523,7 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     // Lock to prevent the service function from using this resource
-    boost::mutex::scoped_lock lock(this->resourceLock);
+    //boost::mutex::scoped_lock lock(this->resourceLock);
 
     // Construct the resource
     Resource_impl *resource;

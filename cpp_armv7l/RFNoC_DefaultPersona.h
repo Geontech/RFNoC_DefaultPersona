@@ -58,11 +58,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         connectRadioRXCallback connectRadioRXCb;
         connectRadioTXCallback connectRadioTXCb;
         bool enabled;
-        boost::condition_variable resourceAvailable;
-        bool resourceHeld;
-        boost::mutex resourceLock;
         RFNoC_ResourceManager *resourceManager;
-        bool terminateWaiting;
+        //bool terminateWaiting;
         uhd::device3::sptr usrp;
         uhd::device_addr_t usrpAddress;
 
