@@ -393,7 +393,7 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 
         if (allocationSuccess) {
             LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
-            this->resourceManager = new RFNoC_ResourceManager(this->usrp);
+            this->resourceManager = new RFNoC_ResourceManager(this, this->usrp, this->usrpAddress);
         }
     }
 
@@ -539,34 +539,17 @@ Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], 
     Resource_impl *resource;
 
     try {
-        blockIDCallback blockIdCb = boost::bind(&RFNoC_ResourceManager::setBlockIDMapping, this->resourceManager, _1, _2);
-        setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetRxStreamer, this->resourceManager, _1, _2);
-        setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetTxStreamer, this->resourceManager, _1, _2);
-
-        resource = fnptr(argc, argv, this, this->usrpAddress, blockIdCb, setSetRxStreamerCb, setSetTxStreamerCb);
+        resource = this->resourceManager->addResource(argc, argv, fnptr, libraryName);
 
         if (not resource) {
-            LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor returned NULL resource");
+            LOG_ERROR(RFNoC_DefaultPersona_i, "Resource Manager returned NULL resource");
             throw std::exception();
         }
     } catch (...) {
-        LOG_ERROR(RFNoC_DefaultPersona_i, "Constructor threw an exception");
+        LOG_ERROR(RFNoC_DefaultPersona_i, "Resource Manager threw an exception");
 
         return NULL;
     }
-
-    this->resourceManager->addResource(resource);
-
-    LOG_INFO(RFNoC_DefaultPersona_i, "Casting the resource as an RF-Noc Component Interface");
-
-    // Activate the component
-    RFNoC_ComponentInterface *component = (RFNoC_ComponentInterface *) resource;
-
-    LOG_INFO(RFNoC_DefaultPersona_i, "Activating the component");
-
-    component->activate();
-
-    LOG_INFO(RFNoC_DefaultPersona_i, "Component activated");
 
     return resource;
 }

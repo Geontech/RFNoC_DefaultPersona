@@ -9,8 +9,10 @@
 
 PREPARE_LOGGING(RFNoC_ResourceManager)
 
-RFNoC_ResourceManager::RFNoC_ResourceManager(uhd::device3::sptr usrp) :
-    usrp(usrp)
+RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress) :
+    parent(parent),
+    usrp(usrp),
+    usrpAddress(usrpAddress)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
@@ -22,33 +24,46 @@ RFNoC_ResourceManager::~RFNoC_ResourceManager()
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 }
 
-std::string RFNoC_ResourceManager::addResource(Resource_impl *rhResource)
+Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    std::string resourceID = rhResource->_identifier;
+    std::string resourceID;
+
+    for (int i = 0; i < argc; ++i) {
+        if (strcmp(argv[i], "COMPONENT_IDENTIFIER") == 0) {
+            resourceID = argv[i+1];
+            break;
+        }
+    }
 
     RFNoC_ListMap::iterator listMapIt = this->idToList.find(resourceID);
 
     if (listMapIt != this->idToList.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to add a Resource already tracked by the Resource Manager.");
         resourceID.clear();
-        return resourceID;
+        return NULL;
     }
 
     LOG_DEBUG(RFNoC_ResourceManager, "Instantiating new RFNoC_ResourceList");
 
-    RFNoC_ResourceList *newResourceList = new RFNoC_ResourceList(this->graph);
-
-    LOG_DEBUG(RFNoC_ResourceManager, "Adding RFNoC_Resource to RFNoC_ResourceList");
-
-    newResourceList->addResource(rhResource);
+    RFNoC_ResourceList *newResourceList = new RFNoC_ResourceList(this, this->graph);
 
     LOG_DEBUG(RFNoC_ResourceManager, "Mapping Resource ID to RFNoC_ResourceList");
 
     this->idToList[resourceID] = newResourceList;
 
-    return resourceID;
+    LOG_DEBUG(RFNoC_ResourceManager, "Adding RFNoC_Resource to RFNoC_ResourceList");
+
+    Resource_impl *resource = newResourceList->addResource(argc, argv, fnptr, libraryName, resourceID);
+
+    if (not resource) {
+        LOG_ERROR(RFNoC_ResourceManager, "Failed to add new resource, cleaning up");
+        delete newResourceList;
+        this->idToList.erase(resourceID);
+    }
+
+    return resource;
 }
 
 void RFNoC_ResourceManager::removeResource(const std::string &resourceID)

@@ -9,8 +9,9 @@
 
 PREPARE_LOGGING(RFNoC_ResourceList)
 
-RFNoC_ResourceList::RFNoC_ResourceList(uhd::rfnoc::graph::sptr graph) :
-    graph(graph)
+RFNoC_ResourceList::RFNoC_ResourceList(RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph) :
+    graph(graph),
+    resourceManager(resourceManager)
 {
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
 }
@@ -24,29 +25,36 @@ RFNoC_ResourceList::~RFNoC_ResourceList()
     }
 }
 
-std::string RFNoC_ResourceList::addResource(Resource_impl *rhResource)
+Resource_impl* RFNoC_ResourceList::addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName, std::string resourceID)
 {
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
-
-    std::string resourceID = rhResource->_identifier;
 
     RFNoC_ResourceMap::iterator resourceMapIt = this->idToResource.find(resourceID);
 
     if (resourceMapIt != this->idToResource.end()) {
         LOG_WARN(RFNoC_ResourceList, "Attempted to add a Resource already tracked by the RFNoC_ResourceList.");
-        resourceID.clear();
-        return resourceID;
+        return NULL;
     }
 
     LOG_DEBUG(RFNoC_ResourceList, "Instantiating new RFNoC_Resource");
 
-    RFNoC_Resource *newResource = new RFNoC_Resource(this->graph, rhResource);
+    RFNoC_Resource *newResource = new RFNoC_Resource(resourceID, this->resourceManager, this->graph);
 
     LOG_DEBUG(RFNoC_ResourceList, "Mapping Resource ID to RFNoC_Resource");
 
     this->idToResource[resourceID] = newResource;
 
-    return resourceID;
+    LOG_DEBUG(RFNoC_ResourceList, "Instantiating Resource");
+
+    Resource_impl* resource = newResource->instantiate(argc, argv, fnptr, libraryName);
+
+    if (not resource) {
+        LOG_ERROR(RFNoC_ResourceList, "Failed to add new resource, cleaning up");
+        delete newResource;
+        this->idToResource.erase(resourceID);
+    }
+
+    return resource;
 }
 
 bool RFNoC_ResourceList::connect(RFNoC_ResourceList &providesList)

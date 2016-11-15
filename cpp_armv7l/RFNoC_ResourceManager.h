@@ -15,16 +15,22 @@
 
 #include "RFNoC_ResourceList.h"
 
+// Forward declaration of other classes
+class RFNoC_ResourceList;
+
 class RFNoC_ResourceManager
 {
     ENABLE_LOGGING
     public:
-        RFNoC_ResourceManager(uhd::device3::sptr usrp);
+        RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress);
         ~RFNoC_ResourceManager();
 
-        std::string addResource(Resource_impl *rhResource);
+        Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
         void removeResource(const std::string &resourceID);
         bool update();
+
+        Device_impl* getParent() const { return this->parent; }
+        uhd::device_addr_t getUsrpAddress() const { return this->usrpAddress; }
 
         void setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
         void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
@@ -35,7 +41,9 @@ class RFNoC_ResourceManager
 
         uhd::rfnoc::graph::sptr graph;
         RFNoC_ListMap idToList;
+        Device_impl *parent;
         uhd::device3::sptr usrp;
+        uhd::device_addr_t usrpAddress;
 };
 
 #endif

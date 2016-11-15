@@ -1,6 +1,8 @@
 #ifndef RFNOC_DEFAULTPERSONA_ENTRY_POINTS_H
 #define RFNOC_DEFAULTPERSONA_ENTRY_POINTS_H
 
+#include <ossie/Device_impl.h>
+#include <ossie/Resource_impl.h>
 #include <uhd/types/device_addr.hpp>
 
 #include "RFNoC_Component.h"

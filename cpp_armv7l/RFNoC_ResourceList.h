@@ -8,23 +8,24 @@
 #ifndef RFNOC_RESOURCELIST_H
 #define RFNOC_RESOURCELIST_H
 
-/*#include <ossie/debug.h>
+#include <ossie/debug.h>
 #include <uhd/device3.hpp>
-#include <uhd/rfnoc/block_id.hpp>
-#include <uhd/rfnoc/graph.hpp>*/
-
 #include <uhd/rfnoc/graph.hpp>
 
 #include "RFNoC_Resource.h"
+
+// Forward declarations of other classes
+class RFNoC_Resource;
+class RFNoC_ResourceManager;
 
 class RFNoC_ResourceList
 {
     ENABLE_LOGGING
     public:
-        RFNoC_ResourceList(uhd::rfnoc::graph::sptr graph);
+        RFNoC_ResourceList(RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph);
         ~RFNoC_ResourceList();
 
-        std::string addResource(Resource_impl *rhResource);
+        Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName, std::string resourceID);
         bool connect(RFNoC_ResourceList &providesList);
         bool empty();
         std::vector<std::string> getIDs();
@@ -45,6 +46,7 @@ class RFNoC_ResourceList
         uhd::rfnoc::graph::sptr graph;
         RFNoC_ResourceMap idToResource;
         std::list<RFNoC_Resource *> resourceList;
+        RFNoC_ResourceManager *resourceManager;
 };
 
 #endif

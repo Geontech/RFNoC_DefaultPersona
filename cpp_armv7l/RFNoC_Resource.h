@@ -12,10 +12,14 @@
 #include <ossie/debug.h>
 #include <ossie/CF/QueryablePort.h>
 #include <ossie/Resource_impl.h>
+#include <string>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/graph.hpp>
 
+#include "entry_point.h"
 #include "RFNoC_Component.h"
+#include "RFNoC_ResourceList.h"
+#include "RFNoC_ResourceManager.h"
 
 #define LOG_TRACE_ID(classname, id, expression)     LOG_TRACE(classname, id << ":" << expression)
 #define LOG_DEBUG_ID(classname, id, expression)     LOG_DEBUG(classname, id << ":" << expression)
@@ -24,18 +28,22 @@
 #define LOG_ERROR_ID(classname, id, expression)     LOG_ERROR(classname, id << ":" << expression)
 #define LOG_FATAL_ID(classname, id, expression)     LOG_FATAL(classname, id << ":" << expression)
 
+// Forward declaration of other classes
+class RFNoC_ResourceManager;
+
 class RFNoC_Resource
 {
     ENABLE_LOGGING
     public:
-        RFNoC_Resource(uhd::rfnoc::graph::sptr graph, Resource_impl *resource);
+        RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph);
         virtual ~RFNoC_Resource();
 
         bool connect(const RFNoC_Resource &provides);
         uhd::rfnoc::block_id_t getProvidesBlock() const;
         uhd::rfnoc::block_id_t getUsesBlock() const;
         bool hasHash(CORBA::ULong hash) const;
-        std::string id() const { return ID; }
+        std::string id() const { return this->ID; }
+        Resource_impl *instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
         void setRxStreamer(bool enable);
         void setTxStreamer(bool enable);
         bool update();
@@ -57,6 +65,7 @@ class RFNoC_Resource
         bool isRxStreamer;
         bool isTxStreamer;
         std::vector<CORBA::ULong> providesHashes;
+        RFNoC_ResourceManager *resourceManager;
         Resource_impl *rhResource;
         setStreamerCallback setRxStreamerCb;
         setStreamerCallback setTxStreamerCb;
