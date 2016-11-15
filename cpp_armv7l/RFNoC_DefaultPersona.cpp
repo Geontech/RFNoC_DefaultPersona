@@ -383,7 +383,7 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 
         if (allocationSuccess) {
             LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
-            this->resourceManager = new RFNoC_ResourceManager(this, this->usrp, this->usrpAddress);
+            this->resourceManager = new RFNoC_ResourceManager(this, this->usrp, this->usrpAddress, this->connectRadioRXCb, this->connectRadioTXCb);
         }
     }
 
