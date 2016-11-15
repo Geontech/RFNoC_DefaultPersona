@@ -160,21 +160,29 @@ bool RFNoC_ResourceManager::update()
         RFNoC_Resource *providesResource = updatedResourceList->getProvidesResource();
         RFNoC_Resource *usesResource = updatedResourceList->getUsesResource();
 
+        LOG_DEBUG(RFNoC_ResourceManager, "Got the resources");
+
         // Try to connect to programmable device first
         // RX Radio
         std::vector<CORBA::ULong> providesHashes = providesResource->getProvidesHashes();
         bool firstConnected = false;
 
+        LOG_DEBUG(RFNoC_ResourceManager, "Got the provides hashes");
+
         for (size_t j = 0; j < providesHashes.size(); ++j) {
             CORBA::ULong hash = providesHashes[j];
 
+            LOG_DEBUG(RFNoC_ResourceManager, "Checking provides hash: " << hash);
+
             if (this->connectRadioRXCb(hash, providesResource->getProvidesBlock(), uhd::rfnoc::ANY_PORT)) {
+                LOG_DEBUG(RFNoC_ResourceManager, "Connection succeeded");
                 firstConnected = true;
                 break;
             }
         }
 
         if (not firstConnected) {
+            LOG_DEBUG(RFNoC_ResourceManager, "No connection, setting as TX streamer");
             providesResource->setTxStreamer(true);
         }
 
@@ -182,14 +190,22 @@ bool RFNoC_ResourceManager::update()
         std::vector<std::string> connectionIDs = usesResource->getConnectionIDs();
         bool lastConnected = false;
 
+        LOG_DEBUG(RFNoC_ResourceManager, "Got the connection IDs");
+
         for (size_t j = 0; j < connectionIDs.size(); ++j) {
-            if (this->connectRadioTXCb(connectionIDs[j], usesResource->getUsesBlock(), uhd::rfnoc::ANY_PORT)) {
+            std::string connectionID = connectionIDs[j];
+
+            LOG_DEBUG(RFNoC_ResourceManager, "Checking connection ID: " << connectionID);
+
+            if (this->connectRadioTXCb(connectionID, usesResource->getUsesBlock(), uhd::rfnoc::ANY_PORT)) {
+                LOG_DEBUG(RFNoC_ResourceManager, "Connection succeeded");
                 lastConnected = true;
                 break;
             }
         }
 
         if (not lastConnected) {
+            LOG_DEBUG(RFNoC_ResourceManager, "No connection, setting as RX streamer");
             usesResource->setRxStreamer(true);
         }
     }
