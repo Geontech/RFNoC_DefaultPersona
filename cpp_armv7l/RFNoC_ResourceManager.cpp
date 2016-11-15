@@ -39,6 +39,8 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
         }
     }
 
+    LOG_DEBUG(RFNoC_ResourceManager, "Adding Resource with ID: " << resourceID);
+
     RFNoC_ListMap::iterator listMapIt = this->idToList.find(resourceID);
 
     if (listMapIt != this->idToList.end()) {

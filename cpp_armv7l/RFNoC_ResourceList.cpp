@@ -29,6 +29,8 @@ Resource_impl* RFNoC_ResourceList::addResource(int argc, char* argv[], Construct
 {
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
 
+    LOG_DEBUG(RFNoC_ResourceList, "Adding Resource with ID: " << resourceID);
+
     RFNoC_ResourceMap::iterator resourceMapIt = this->idToResource.find(resourceID);
 
     if (resourceMapIt != this->idToResource.end()) {
