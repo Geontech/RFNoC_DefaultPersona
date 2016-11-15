@@ -236,7 +236,7 @@ void RFNoC_Resource::setBlockIDs(const std::vector<uhd::rfnoc::block_id_t> &bloc
     for (size_t i = 0; i < blockIDs.size(); ++i) {
         std::string blockID = blockIDs[i].get();
 
-        if (blockID.find("Radio") or blockID.find("DDC") or blockID.find("DUC")) {
+        if (blockID.find("Radio") != std::string::npos or blockID.find("DDC") != std::string::npos or blockID.find("DUC") != std::string::npos) {
             LOG_ERROR(RFNoC_Resource, "Unable to claim RF-NoC Resource with ID: " << blockID);
             throw std::exception();
         }
