@@ -13,6 +13,7 @@
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/graph.hpp>
 
+#include "RFNoC_Persona.h"
 #include "RFNoC_ResourceList.h"
 
 // Forward declaration of other classes
@@ -22,7 +23,7 @@ class RFNoC_ResourceManager
 {
     ENABLE_LOGGING
     public:
-        RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress);
+        RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress, connectRadioRXCallback rxCb, connectRadioTXCallback txCb);
         ~RFNoC_ResourceManager();
 
         Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -39,6 +40,8 @@ class RFNoC_ResourceManager
     protected:
         typedef std::map<std::string, RFNoC_ResourceList *> RFNoC_ListMap;
 
+        connectRadioRXCallback connectRadioRXCb;
+        connectRadioTXCallback connectRadioTXCb;
         uhd::rfnoc::graph::sptr graph;
         RFNoC_ListMap idToList;
         Device_impl *parent;

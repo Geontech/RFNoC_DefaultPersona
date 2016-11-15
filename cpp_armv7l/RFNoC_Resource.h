@@ -39,7 +39,9 @@ class RFNoC_Resource
         virtual ~RFNoC_Resource();
 
         bool connect(const RFNoC_Resource &provides);
+        std::vector<std::string> getConnectionIDs() const;
         uhd::rfnoc::block_id_t getProvidesBlock() const;
+        std::vector<CORBA::ULong> getProvidesHashes() const { return this->providesHashes; }
         uhd::rfnoc::block_id_t getUsesBlock() const;
         bool hasHash(CORBA::ULong hash) const;
         std::string id() const { return this->ID; }

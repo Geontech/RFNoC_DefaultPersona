@@ -79,6 +79,21 @@ bool RFNoC_Resource::connect(const RFNoC_Resource &provides)
     return false;
 }
 
+std::vector<std::string> RFNoC_Resource::getConnectionIDs() const
+{
+    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
+
+    std::vector<std::string> connectionIDs;
+
+    for (hashToConnectionSequence::const_iterator it = this->usesHashToPreviousConnections.begin(); it != this->usesHashToPreviousConnections.end(); ++it) {
+        for (size_t i = 0; i < it->second->length(); ++i) {
+            connectionIDs.push_back((*it->second)[i].connectionId._ptr);
+        }
+    }
+
+    return connectionIDs;
+}
+
 uhd::rfnoc::block_id_t RFNoC_Resource::getProvidesBlock() const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);

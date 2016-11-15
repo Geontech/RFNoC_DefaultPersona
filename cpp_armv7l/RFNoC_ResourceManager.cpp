@@ -9,7 +9,9 @@
 
 PREPARE_LOGGING(RFNoC_ResourceManager)
 
-RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress) :
+RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress, connectRadioRXCallback rxCb, connectRadioTXCallback txCb) :
+    connectRadioRXCb(rxCb),
+    connectRadioTXCb(txCb),
     parent(parent),
     usrp(usrp),
     usrpAddress(usrpAddress)
@@ -156,9 +158,42 @@ bool RFNoC_ResourceManager::update()
             // TODO: Support updating the vector of RFNoC_Resources for multiple changes at once
             std::vector<RFNoC_Resource *> updatedResources = it->second;
 
-            // Any RFNoC_Resources left should be set as streamers
+            // Any RFNoC_Resources left should be connected to the radio or set as streamers
             for (size_t i = 0; i < updatedResources.size(); ++i) {
                 RFNoC_Resource *resource = updatedResources[i];
+
+                // Try to connect to programmable device first
+                // RX Radio
+                std::vector<CORBA::ULong> providesHashes;
+                bool firstConnected = false;
+
+                for (size_t j = 0; j < providesHashes.size(); ++j) {
+                    CORBA::ULong hash = providesHashes[i];
+
+                    if (this->connectRadioRXCb(hash, resource->getProvidesBlock(), uhd::rfnoc::ANY_PORT)) {
+                        firstConnected = true;
+                        break;
+                    }
+                }
+
+                if (not firstConnected) {
+                    resource->setTxStreamer(true);
+                }
+
+                // TX Radio
+                std::vector<std::string> connectionIDs = resource->getConnectionIDs();
+                bool lastConnected = false;
+
+                for (size_t j = 0; j < connectionIDs.size(); ++j) {
+                    if (this->connectRadioTXCb(connectionIDs[j], resource->getUsesBlock(), uhd::rfnoc::ANY_PORT)) {
+                        lastConnected = true;
+                        break;
+                    }
+                }
+
+                if (not lastConnected) {
+                    resource->setRxStreamer(true);
+                }
             }
         }
     }
