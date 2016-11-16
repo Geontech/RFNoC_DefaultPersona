@@ -134,7 +134,7 @@ void RFNoC_ResourceList::removeResource(const std::string &resourceID)
 
     LOG_DEBUG(RFNoC_ResourceList, "Removing Resource with ID: " << resourceID);
 
-    if (this->idToResource.find(resourceID) != this->idToResource.end()) {
+    if (this->idToResource.find(resourceID) == this->idToResource.end()) {
         LOG_WARN(RFNoC_ResourceList, "Attempted to remove a Resource not tracked by the RFNoC_ResourceList");
         return;
     }
