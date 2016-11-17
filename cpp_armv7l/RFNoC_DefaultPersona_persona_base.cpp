@@ -250,7 +250,8 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
                         const CF::Properties&       parameters) 
 {
     // Initialize local variables
-    std::string absPath = get_current_dir_name();
+    char *absPathC = get_current_dir_name();
+    std::string absPath = absPathC;
     void* pHandle = NULL;
     char* errorMsg = NULL;
     CF::Properties combinedProps;
@@ -328,6 +329,8 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     for (unsigned int i = 0; i < argCounter; i++) {
         free(argv[i]);
     }
+
+    free(absPathC);
 
     return resourcePtr;
 }

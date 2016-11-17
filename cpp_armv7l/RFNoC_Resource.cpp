@@ -168,6 +168,8 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
         }
     }
 
+    delete portSet;
+
     return this->rhResource;
 }
 
