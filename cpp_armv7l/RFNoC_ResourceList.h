@@ -23,7 +23,10 @@ class RFNoC_ResourceList
     ENABLE_LOGGING
     public:
         RFNoC_ResourceList(RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph);
+        RFNoC_ResourceList(RFNoC_ResourceList &that);
         ~RFNoC_ResourceList();
+
+        RFNoC_ResourceList& operator=(const RFNoC_ResourceList &that);
 
         Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName, std::string resourceID);
         bool connect(RFNoC_ResourceList &providesList);

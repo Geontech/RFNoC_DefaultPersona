@@ -16,6 +16,15 @@ RFNoC_ResourceList::RFNoC_ResourceList(RFNoC_ResourceManager *resourceManager, u
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
 }
 
+RFNoC_ResourceList::RFNoC_ResourceList(RFNoC_ResourceList &that) :
+    graph(that.graph),
+    idToResource(that.idToResource),
+    resourceList(that.resourceList),
+    resourceManager(that.resourceManager)
+{
+    LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
+}
+
 RFNoC_ResourceList::~RFNoC_ResourceList()
 {
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
@@ -23,6 +32,29 @@ RFNoC_ResourceList::~RFNoC_ResourceList()
     for (RFNoC_ResourceMap::iterator it = this->idToResource.begin(); it != this->idToResource.end(); ++it) {
         delete it->second;
     }
+}
+
+RFNoC_ResourceList& RFNoC_ResourceList::operator=(const RFNoC_ResourceList &that)
+{
+    LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
+
+    LOG_ERROR(RFNoC_ResourceList, __PRETTY_FUNCTION__);
+
+    this->graph = that.graph;
+    this->resourceList = that.resourceList;
+    this->resourceManager = that.resourceManager;
+
+    for (RFNoC_ResourceMap::iterator it = this->idToResource.begin(); it != this->idToResource.end(); ++it) {
+        delete it->second;
+    }
+
+    this->idToResource.clear();
+
+    for (RFNoC_ResourceMap::const_iterator it = that.idToResource.begin(); it != that.idToResource.end(); ++it) {
+        this->idToResource[it->first] = it->second;
+    }
+
+    return *this;
 }
 
 Resource_impl* RFNoC_ResourceList::addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName, std::string resourceID)
