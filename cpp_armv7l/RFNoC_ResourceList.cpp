@@ -86,6 +86,7 @@ Resource_impl* RFNoC_ResourceList::addResource(int argc, char* argv[], Construct
         LOG_ERROR(RFNoC_ResourceList, "Failed to add new resource, cleaning up");
         delete newResource;
         this->idToResource.erase(resourceID);
+        return NULL;
     }
 
     // The first resource always goes in the list

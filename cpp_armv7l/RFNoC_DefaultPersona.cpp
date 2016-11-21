@@ -358,6 +358,11 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
+    if (not RFNoC_DefaultPersona_persona_base::allocateCapacity(capacities)) {
+        LOG_ERROR(RFNoC_DefaultPersona_i, "Failed to allocate parent class");
+        return false;
+    }
+
     bool allocationSuccess = false;
 
     if (isBusy() || isLocked()) {
@@ -404,6 +409,8 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
     this->usrp.reset();
 
     attemptToUnprogramParent();
+
+    RFNoC_DefaultPersona_persona_base::deallocateCapacity(capacities);
 }
 
 CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char* name, const CF::Properties& options, const CF::Properties& parameters)
