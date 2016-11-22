@@ -392,6 +392,8 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
         }
     }
 
+    this->_usageState = updateUsageState();
+
     return allocationSuccess;
 }
 
@@ -409,6 +411,8 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
     this->usrp.reset();
 
     attemptToUnprogramParent();
+
+    this->_usageState = updateUsageState();
 
     RFNoC_DefaultPersona_persona_base::deallocateCapacity(capacities);
 }
@@ -566,4 +570,13 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request)
     LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << this->hw_load_status.hardware_id);
     request[3].id = CORBA::string_dup("load_filepath");
     request[3].value <<= ossie::corba::returnString(this->hw_load_status.load_filepath.c_str());
+}
+
+CF::Device::UsageType RFNoC_DefaultPersona_i::updateUsageState()
+{
+    if (this->enabled) {
+        return CF::Device::BUSY;
+    }
+
+    return CF::Device::IDLE;
 }

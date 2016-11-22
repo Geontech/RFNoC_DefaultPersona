@@ -55,6 +55,9 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void hwLoadRequest(CF::Properties& request);
 
     private:
+        CF::Device::UsageType updateUsageState();
+
+    private:
         connectRadioRXCallback connectRadioRXCb;
         connectRadioTXCallback connectRadioTXCb;
         bool enabled;
