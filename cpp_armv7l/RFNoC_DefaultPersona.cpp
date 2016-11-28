@@ -577,7 +577,7 @@ CF::Device::UsageType RFNoC_DefaultPersona_i::updateUsageState()
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     if (this->enabled) {
-        return CF::Device::BUSY;
+        return CF::Device::ACTIVE;
     }
 
     return CF::Device::IDLE;
