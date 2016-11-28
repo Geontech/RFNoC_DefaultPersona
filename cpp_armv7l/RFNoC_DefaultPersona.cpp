@@ -155,9 +155,9 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
 
     attemptToUnprogramParent();
 
-    this->_usageState = updateUsageState();
-
     RFNoC_DefaultPersona_persona_base::deallocateCapacity(capacities);
+
+    this->_usageState = updateUsageState();
 }
 
 CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char* name, const CF::Properties& options, const CF::Properties& parameters)
