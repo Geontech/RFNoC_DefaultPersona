@@ -574,6 +574,8 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request)
 
 CF::Device::UsageType RFNoC_DefaultPersona_i::updateUsageState()
 {
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
     if (this->enabled) {
         return CF::Device::BUSY;
     }
