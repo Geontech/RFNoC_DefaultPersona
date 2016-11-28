@@ -24,6 +24,10 @@ RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::
 RFNoC_ResourceManager::~RFNoC_ResourceManager()
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
+
+    for (RFNoC_ListMap::iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
+        delete it->second;
+    }
 }
 
 Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
