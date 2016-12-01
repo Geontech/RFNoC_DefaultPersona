@@ -300,6 +300,7 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
 
     for (unsigned int i = combinedProps.length() - 1; i >= 0; i--) {
         LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "B1");
+        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "i: " << i);
         propId = combinedProps[i].id;
         propValue = ossie::any_to_string(combinedProps[i].value);
 
