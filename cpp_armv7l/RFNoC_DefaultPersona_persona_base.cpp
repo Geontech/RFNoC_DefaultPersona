@@ -289,7 +289,13 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     // Convert combined properties into ARGV/ARGC format
     argc = combinedProps.length() * 2 + 1;
     char* argv[argc];
-    for (unsigned int i = 0; i < combinedProps.length(); i++) {
+
+    // Add the SKIP_RUN argument, which takes no arguments
+    const std::string skipRun = "SKIP_RUN";
+    argv[argCounter] = (char*) malloc(skipRun.size() + 1);
+    strcpy(argv[argCounter++], skipRun.c_str());
+
+    for (unsigned int i = combinedProps.length() - 1; i >= 0; i--) {
         propId = combinedProps[i].id;
         propValue = ossie::any_to_string(combinedProps[i].value);
 
@@ -299,11 +305,6 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
         argv[argCounter] = (char*) malloc(propValue.size() + 1);
         strcpy(argv[argCounter++], propValue.c_str());
     }
-
-    // Add the SKIP_RUN argument, which takes no arguments
-    const std::string skipRun = "SKIP_RUN";
-    argv[argCounter] = (char*) malloc(skipRun.size() + 1);
-    strcpy(argv[argCounter++], skipRun.c_str());
 
     // Look for the 'construct' C-method
     fnPtr = dlsym(pHandle, symbol);
