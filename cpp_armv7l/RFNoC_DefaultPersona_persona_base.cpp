@@ -299,8 +299,12 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "B");
 
     for (unsigned int i = combinedProps.length() - 1; i >= 0; i--) {
+        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "B1");
         propId = combinedProps[i].id;
         propValue = ossie::any_to_string(combinedProps[i].value);
+
+        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "ID: " << propId);
+        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "Value: " << propValue);
 
         argv[argCounter] = (char*) malloc(propId.size() + 1);
         strcpy(argv[argCounter++], propId.c_str());
