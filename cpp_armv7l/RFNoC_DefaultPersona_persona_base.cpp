@@ -290,10 +290,13 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     argc = combinedProps.length() * 2 + 1;
     char* argv[argc];
 
+    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "A");
     // Add the SKIP_RUN argument, which takes no arguments
     const std::string skipRun = "SKIP_RUN";
     argv[argCounter] = (char*) malloc(skipRun.size() + 1);
     strcpy(argv[argCounter++], skipRun.c_str());
+
+    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "B");
 
     for (unsigned int i = combinedProps.length() - 1; i >= 0; i--) {
         propId = combinedProps[i].id;
@@ -306,9 +309,13 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
         strcpy(argv[argCounter++], propValue.c_str());
     }
 
+    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "C");
+
     for (unsigned int i = 0; i < argCounter; ++i) {
         LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "argv[" << i << "] = " << argv[i]);
     }
+
+    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "D");
 
     // Look for the 'construct' C-method
     fnPtr = dlsym(pHandle, symbol);
