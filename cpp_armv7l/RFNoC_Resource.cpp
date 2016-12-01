@@ -239,11 +239,11 @@ bool RFNoC_Resource::update()
     return updated;
 }
 
-bool RFNoC_Resource::operator==(const RFNoC_Resource *rhs) const
+bool RFNoC_Resource::operator==(const RFNoC_Resource &rhs) const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return (this->ID == rhs->ID);
+    return (this->blockIDs == rhs.blockIDs);
 }
 
 void RFNoC_Resource::setBlockIDs(const std::vector<uhd::rfnoc::block_id_t> &blockIDs)

@@ -50,7 +50,7 @@ class RFNoC_Resource
         void setTxStreamer(bool enable);
         bool update();
 
-        bool operator==(const RFNoC_Resource *rhs) const;
+        bool operator==(const RFNoC_Resource &rhs) const;
 
         void setBlockIDs(const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
         void setSetRxStreamer(setStreamerCallback cb);

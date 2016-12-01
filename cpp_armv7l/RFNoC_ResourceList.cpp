@@ -7,6 +7,11 @@
 
 #include "RFNoC_ResourceList.h"
 
+bool resource_is_equal(const RFNoC_Resource &s, const RFNoC_Resource *p)
+{
+    return s == *p;
+}
+
 PREPARE_LOGGING(RFNoC_ResourceList)
 
 RFNoC_ResourceList::RFNoC_ResourceList(RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph) :
@@ -174,7 +179,7 @@ void RFNoC_ResourceList::removeResource(const std::string &resourceID)
 
     RFNoC_Resource *resource = this->idToResource[resourceID];
 
-    std::list<RFNoC_Resource *>::iterator listIt = std::find(this->resourceList.begin(), this->resourceList.end(), resource);
+    std::list<RFNoC_Resource *>::iterator listIt = std::find_if(this->resourceList.begin(), this->resourceList.end(), boost::bind(&resource_is_equal, *resource, _1));//std::find(this->resourceList.begin(), this->resourceList.end(), resource);
 
     if (listIt == this->resourceList.end()) {
         LOG_INFO(RFNoC_ResourceList, "Removing Resource which was never connected");
