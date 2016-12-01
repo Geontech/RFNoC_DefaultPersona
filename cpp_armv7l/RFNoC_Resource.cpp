@@ -23,10 +23,6 @@ RFNoC_Resource::RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *re
 RFNoC_Resource::~RFNoC_Resource()
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
-
-    for (hashToConnectionSequence::iterator it = this->usesHashToPreviousConnections.begin(); it != this->usesHashToPreviousConnections.end(); ++it) {
-        delete it->second;
-    }
 }
 
 bool RFNoC_Resource::connect(const RFNoC_Resource &provides)
@@ -85,9 +81,9 @@ std::vector<std::string> RFNoC_Resource::getConnectionIDs() const
 
     std::vector<std::string> connectionIDs;
 
-    for (hashToConnectionSequence::const_iterator it = this->usesHashToPreviousConnections.begin(); it != this->usesHashToPreviousConnections.end(); ++it) {
-        for (size_t i = 0; i < it->second->length(); ++i) {
-            connectionIDs.push_back((*it->second)[i].connectionId._ptr);
+    for (hashToConnectionIDs::const_iterator it = this->usesHashToPreviousConnectionIDs.begin(); it != this->usesHashToPreviousConnectionIDs.end(); ++it) {
+        for (size_t i = 0; i < it->second.size(); ++i) {
+            connectionIDs.push_back(it->second[i]);
         }
     }
 
@@ -163,7 +159,15 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
             CORBA::ULong hash = info.obj_ptr->_hash(1024);
             BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(this->rhResource->getPort(info.name._ptr));
 
-            this->usesHashToPreviousConnections[hash] = usesPort->connections();
+            ExtendedCF::UsesConnectionSequence *connections = usesPort->connections();
+
+            for (size_t j = 0; j < connections->length(); ++j) {
+                ExtendedCF::UsesConnection connection = (*connections)[j];
+                this->usesHashToPreviousConnectionIDs[hash].push_back(connection.connectionId._ptr);
+            }
+
+            delete connections;
+
             this->usesPorts.push_back(usesPort);
         }
     }
@@ -221,19 +225,25 @@ bool RFNoC_Resource::update()
         BULKIO::UsesPortStatisticsProvider_ptr port = this->usesPorts[i];
         ExtendedCF::UsesConnectionSequence *connections = port->connections();
         CORBA::ULong hash = port->_hash(1024);
-        ExtendedCF::UsesConnectionSequence *oldConnections = this->usesHashToPreviousConnections[hash];
+        std::vector<std::string> oldConnections = this->usesHashToPreviousConnectionIDs[hash];
+        std::vector<std::string> newConnections;
 
         LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Checking connections for uses port with hash: " << hash)
 
+        for (size_t j = 0; j < connections->length(); ++j) {
+            ExtendedCF::UsesConnection connection = (*connections)[j];
+            newConnections.push_back(connection.connectionId._ptr);
+        }
+
         // For now we'll assume this is sufficient
         // TODO: Make this more robust (perhaps cast the sequences to sets and do a diff)
-        if (oldConnections->length() != connections->length()) {
+        if (oldConnections != newConnections) {
             LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Length of connections has changed");
             updated = true;
         }
 
-        delete oldConnections;
-        this->usesHashToPreviousConnections[hash] = connections;
+        delete connections;
+        this->usesHashToPreviousConnectionIDs[hash] = newConnections;
     }
 
     return updated;

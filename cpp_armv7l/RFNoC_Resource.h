@@ -57,7 +57,7 @@ class RFNoC_Resource
         void setSetTxStreamer(setStreamerCallback cb);
 
     private:
-        typedef std::map<CORBA::ULong, ExtendedCF::UsesConnectionSequence *> hashToConnectionSequence;
+        typedef std::map<CORBA::ULong, std::vector<std::string> > hashToConnectionIDs;
         typedef std::pair<CORBA::ULong, CORBA::ULong> portHashPair;
 
         std::vector<uhd::rfnoc::block_id_t> blockIDs;
@@ -71,7 +71,7 @@ class RFNoC_Resource
         Resource_impl *rhResource;
         setStreamerCallback setRxStreamerCb;
         setStreamerCallback setTxStreamerCb;
-        hashToConnectionSequence usesHashToPreviousConnections;
+        hashToConnectionIDs usesHashToPreviousConnectionIDs;
         std::vector<BULKIO::UsesPortStatisticsProvider_ptr> usesPorts;
 };
 
