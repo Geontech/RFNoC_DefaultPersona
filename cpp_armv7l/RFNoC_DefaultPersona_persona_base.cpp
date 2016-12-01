@@ -254,8 +254,6 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     std::string absPath = absPathC;
     void* pHandle = NULL;
     char* errorMsg = NULL;
-    CF::Properties combinedProps;
-    unsigned int skipRunInd = 0;
    
     std::string propId;
     std::string propValue;
@@ -279,48 +277,25 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
         return NULL;
     }
 
-    // Add SKIP_FLAG to properties
-    combinedProps = parameters;
-    //skipRunInd = combinedProps.length();
-    //combinedProps.length(skipRunInd + 1);
-    //combinedProps[skipRunInd].id = CORBA::string_dup("SKIP_RUN");
-    //combinedProps[skipRunInd].value <<= true;
-
     // Convert combined properties into ARGV/ARGC format
-    argc = combinedProps.length() * 2 + 1;
+    argc = parameters.length() * 2 + 1;
     char* argv[argc];
 
-    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "A");
     // Add the SKIP_RUN argument, which takes no arguments
     const std::string skipRun = "SKIP_RUN";
-    argv[argCounter] = (char*) malloc(skipRun.size() + 1);
-    strcpy(argv[argCounter++], skipRun.c_str());
+    argv[argCounter] = new char[skipRun.size() + 1];
+    strncpy(argv[argCounter++], skipRun.c_str(), skipRun.size() + 1);
 
-    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "B");
+    for (int i = parameters.length() - 1; i >= 0; i--) {
+        propId = parameters[i].id;
+        propValue = ossie::any_to_string(parameters[i].value);
 
-    for (int i = combinedProps.length() - 1; i >= 0; i--) {
-        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "B1");
-        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "i: " << i);
-        propId = combinedProps[i].id;
-        propValue = ossie::any_to_string(combinedProps[i].value);
+        argv[argCounter] = new char[propId.size() + 1];
+        strncpy(argv[argCounter++], propId.c_str(), propId.size() + 1);
 
-        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "ID: " << propId);
-        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "Value: " << propValue);
-
-        argv[argCounter] = (char*) malloc(propId.size() + 1);
-        strcpy(argv[argCounter++], propId.c_str());
-
-        argv[argCounter] = (char*) malloc(propValue.size() + 1);
-        strcpy(argv[argCounter++], propValue.c_str());
+        argv[argCounter] = new char[propValue.size() + 1];
+        strncpy(argv[argCounter++], propValue.c_str(), propValue.size() + 1);
     }
-
-    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "C");
-
-    for (unsigned int i = 0; i < argCounter; ++i) {
-        LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "argv[" << i << "] = " << argv[i]);
-    }
-
-    LOG_DEBUG(RFNoC_DefaultPersona_persona_base, "D");
 
     // Look for the 'construct' C-method
     fnPtr = dlsym(pHandle, symbol);
@@ -344,7 +319,7 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
 
     // Free the memory used to create argv
     for (unsigned int i = 0; i < argCounter; i++) {
-        free(argv[i]);
+        delete[] argv[i];
     }
 
     free(absPathC);
