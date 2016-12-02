@@ -227,12 +227,12 @@ void RFNoC_DefaultPersona_persona_base::terminate(CF::ExecutableDevice::ProcessI
         /// Search for the persona that related to the found resourceId
         resourceIter = _resourceMap.find(processIter->second);
         if (resourceIter != _resourceMap.end()) {
-            _processMap.erase(processIter);
-            _resourceMap.erase(resourceIter);
-
             // We don't need to call releaseObject here since HW Components will
             // be released by the application factory
             delete resourceIter->second;
+
+            _processMap.erase(processIter);
+            _resourceMap.erase(resourceIter);
 
             return;
         }
