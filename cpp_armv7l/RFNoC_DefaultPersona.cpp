@@ -101,10 +101,10 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    if (not RFNoC_DefaultPersona_persona_base::allocateCapacity(capacities)) {
+    /*if (not RFNoC_DefaultPersona_persona_base::allocateCapacity(capacities)) {
         LOG_ERROR(RFNoC_DefaultPersona_i, "Failed to allocate parent class");
         return false;
-    }
+    }*/
 
     bool allocationSuccess = false;
 
@@ -155,7 +155,7 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
 
     attemptToUnprogramParent();
 
-    RFNoC_DefaultPersona_persona_base::deallocateCapacity(capacities);
+    //RFNoC_DefaultPersona_persona_base::deallocateCapacity(capacities);
 
     this->_usageState = updateUsageState();
 }
