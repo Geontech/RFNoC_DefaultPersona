@@ -45,6 +45,7 @@ class RFNoC_ResourceManager
         uhd::rfnoc::graph::sptr graph;
         RFNoC_ListMap idToList;
         Device_impl *parent;
+        boost::mutex resourceLock;
         uhd::device3::sptr usrp;
         uhd::device_addr_t usrpAddress;
 };

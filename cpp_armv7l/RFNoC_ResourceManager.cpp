@@ -34,6 +34,8 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
+    boost::mutex::scoped_lock lock(this->resourceLock);
+
     std::string resourceID;
 
     for (int i = 0; i < argc; ++i) {
@@ -78,6 +80,8 @@ void RFNoC_ResourceManager::removeResource(const std::string &resourceID)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
+    boost::mutex::scoped_lock lock(this->resourceLock);
+
     LOG_DEBUG(RFNoC_ResourceManager, "Removing Resource with ID: " << resourceID);
 
     if (this->idToList.find(resourceID) == this->idToList.end()) {
@@ -104,6 +108,8 @@ void RFNoC_ResourceManager::removeResource(const std::string &resourceID)
 bool RFNoC_ResourceManager::update()
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
+
+    boost::mutex::scoped_lock lock(this->resourceLock);
 
     bool updatedAny = false;
     std::vector<RFNoC_ResourceList *> updatedResourcesLists;
