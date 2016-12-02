@@ -62,7 +62,6 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         connectRadioTXCallback connectRadioTXCb;
         bool enabled;
         RFNoC_ResourceManager *resourceManager;
-        //bool terminateWaiting;
         uhd::device3::sptr usrp;
         uhd::device_addr_t usrpAddress;
 

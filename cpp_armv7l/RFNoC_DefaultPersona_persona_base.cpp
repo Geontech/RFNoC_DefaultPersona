@@ -199,7 +199,7 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_persona_base::execute 
         throw (CF::ExecutableDevice::ExecuteFail());
     }
 
-    resourceId = ossie::corba::returnString(resourcePtr->identifier());
+    resourceId = resourcePtr->_identifier;
     _resourceMap[resourceId] = resourcePtr;                 // Store the resourcePtr
     _processMap[++_processIdIncrement] = resourceId;        // Store the resourcePtr Process for termination
     //_deviceManager->registerDevice(resourcePtr->_this());
