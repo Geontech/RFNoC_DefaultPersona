@@ -279,7 +279,7 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
 
     // Convert combined properties into ARGV/ARGC format
     argc = parameters.length() * 2 + 1;
-    char* argv[argc];
+    char** argv = new char*[argc];
 
     // Add the SKIP_RUN argument, which takes no arguments
     const std::string skipRun = "SKIP_RUN";
@@ -321,6 +321,8 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
     for (unsigned int i = 0; i < argCounter; i++) {
         delete[] argv[i];
     }
+
+    delete[] argv;
 
     free(absPathC);
 
