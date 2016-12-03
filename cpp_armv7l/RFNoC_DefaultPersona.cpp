@@ -304,14 +304,13 @@ void RFNoC_DefaultPersona_i::hwLoadRequest(CF::Properties& request)
 
     request.length(4);
 
-    request[0].id = CORBA::string_dup("request_id");
+    request[0].id = "request_id";
     request[0].value <<= ossie::generateUUID();
-    request[1].id = CORBA::string_dup("requester_id");
+    request[1].id = "requester_id";
     request[1].value <<= ossie::corba::returnString(this->_identifier.c_str());
-    request[2].id = CORBA::string_dup("hardware_id");
+    request[2].id = "hardware_id";
     request[2].value <<= ossie::corba::returnString(this->hw_load_status.hardware_id.c_str());
-    LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << this->hw_load_status.hardware_id);
-    request[3].id = CORBA::string_dup("load_filepath");
+    request[3].id = "load_filepath";
     request[3].value <<= ossie::corba::returnString(this->hw_load_status.load_filepath.c_str());
 }
 
