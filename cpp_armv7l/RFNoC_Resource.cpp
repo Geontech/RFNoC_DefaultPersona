@@ -223,6 +223,12 @@ bool RFNoC_Resource::update()
 
     for (size_t i = 0; i < this->usesPorts.size(); ++i) {
         BULKIO::UsesPortStatisticsProvider_ptr port = this->usesPorts[i];
+
+        if (not ossie::corba::objectExists(port)) {
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Port doesn't exist, skipping");
+            continue;
+        }
+
         ExtendedCF::UsesConnectionSequence *connections = port->connections();
         CORBA::ULong hash = port->_hash(1024);
         std::vector<std::string> oldConnections = this->usesHashToPreviousConnectionIDs[hash];
