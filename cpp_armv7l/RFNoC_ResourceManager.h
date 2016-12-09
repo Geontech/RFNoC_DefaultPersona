@@ -31,7 +31,7 @@ class RFNoC_ResourceManager
         bool update();
 
         Device_impl* getParent() const { return this->parent; }
-        uhd::device_addr_t getUsrp() { return this->usrp; }
+        uhd::device3::sptr getUsrp() { return this->usrp; }
 
         void setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
         void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
