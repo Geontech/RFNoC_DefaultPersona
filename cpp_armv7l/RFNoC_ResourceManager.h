@@ -23,7 +23,7 @@ class RFNoC_ResourceManager
 {
     ENABLE_LOGGING
     public:
-        RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress, connectRadioRXCallback rxCb, connectRadioTXCallback txCb);
+        RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, connectRadioRXCallback rxCb, connectRadioTXCallback txCb);
         ~RFNoC_ResourceManager();
 
         Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -31,7 +31,7 @@ class RFNoC_ResourceManager
         bool update();
 
         Device_impl* getParent() const { return this->parent; }
-        uhd::device_addr_t getUsrpAddress() const { return this->usrpAddress; }
+        uhd::device_addr_t getUsrp() const { return this->usrp; }
 
         void setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
         void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
@@ -47,7 +47,6 @@ class RFNoC_ResourceManager
         Device_impl *parent;
         boost::mutex resourceLock;
         uhd::device3::sptr usrp;
-        uhd::device_addr_t usrpAddress;
 };
 
 #endif

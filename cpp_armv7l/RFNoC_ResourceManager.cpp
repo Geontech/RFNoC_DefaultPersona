@@ -9,12 +9,11 @@
 
 PREPARE_LOGGING(RFNoC_ResourceManager)
 
-RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, uhd::device_addr_t usrpAddress, connectRadioRXCallback rxCb, connectRadioTXCallback txCb) :
+RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, connectRadioRXCallback rxCb, connectRadioTXCallback txCb) :
     connectRadioRXCb(rxCb),
     connectRadioTXCb(txCb),
     parent(parent),
-    usrp(usrp),
-    usrpAddress(usrpAddress)
+    usrp(usrp)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 

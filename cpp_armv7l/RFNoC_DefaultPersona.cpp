@@ -119,19 +119,9 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
     if (allocationSuccess) {
         allocationSuccess = attemptToProgramParent();
 
-        try {
-            LOG_DEBUG(RFNoC_DefaultPersona_i, "Successfully programmed parent, attempting to retrieve USRP pointer");
-            this->usrp = uhd::device3::make(this->usrpAddress);
-            this->enabled = true;
-        } catch(...) {
-            LOG_ERROR(RFNoC_DefaultPersona_i, "Failed to retrieve USRP pointer");
-            allocationSuccess = false;
-            attemptToUnprogramParent();
-        }
-
         if (allocationSuccess) {
             LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
-            this->resourceManager = new RFNoC_ResourceManager(this, this->usrp, this->usrpAddress, this->connectRadioRXCb, this->connectRadioTXCb);
+            this->resourceManager = new RFNoC_ResourceManager(this, this->usrp, this->connectRadioRXCb, this->connectRadioTXCb);
         }
     }
 
@@ -265,11 +255,11 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
     cb(hwLoadStatusObject);
 }
 
-void RFNoC_DefaultPersona_i::setUsrpAddress(uhd::device_addr_t usrpAddress)
+void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    this->usrpAddress = usrpAddress;
+    this->usrp = usrp;
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)

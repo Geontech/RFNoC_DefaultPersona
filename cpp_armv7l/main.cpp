@@ -3,7 +3,7 @@
 
 #include "RFNoC_DefaultPersona.h"
 
-#include <uhd/types/device_addr.hpp>
+#include <uhd/device3.hpp>
 
 RFNoC_DefaultPersona_i *devicePtr;
 
@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 }
 
 extern "C" {
-    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, hwLoadStatusCallback hwLoadStatusCb, connectRadioRXCallback connectRadioRXCb, connectRadioTXCallback connectRadioTXCb, uhd::device_addr_t usrpAddress) {
+    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, hwLoadStatusCallback hwLoadStatusCb, connectRadioRXCallback connectRadioRXCb, connectRadioTXCallback connectRadioTXCb, uhd::device3::sptr usrp) {
 
         struct sigaction sa;
         sa.sa_handler = signal_catcher;
@@ -49,7 +49,7 @@ extern "C" {
         std::cout << "************************C********************" << std::endl;
         devicePtr->setConnectRadioTXCallback(connectRadioTXCb);
         std::cout << "************************D********************" << std::endl;
-        devicePtr->setUsrpAddress(usrpAddress);
+        devicePtr->setUsrp(usrp);
 
         return devicePtr;
     }
