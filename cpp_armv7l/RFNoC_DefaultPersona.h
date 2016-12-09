@@ -47,8 +47,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
 
         void setConnectRadioRXCallback(connectRadioRXCallback cb);
         void setConnectRadioTXCallback(connectRadioTXCallback cb);
+        void setGetUsrp(getUsrpCallback cb);
         void setHwLoadStatusCallback(hwLoadStatusCallback cb);
-        void setUsrp(uhd::device3::sptr usrp);
 
     protected:
         Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -61,8 +61,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         connectRadioRXCallback connectRadioRXCb;
         connectRadioTXCallback connectRadioTXCb;
         bool enabled;
+        getUsrpCallback getUsrpCb;
         RFNoC_ResourceManager *resourceManager;
-        uhd::device3::sptr usrp;
 
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToComponentID;
 };

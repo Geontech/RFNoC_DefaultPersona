@@ -79,19 +79,7 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    if (not this->usrp.get()) {
-        return NOOP;
-    }
-
     this->resourceManager->update();
-
-    /*lock.lock();
-
-    this->resourceHeld = false;
-
-    this->resourceAvailable.notify_all();
-
-    lock.unlock();*/
 
     return NOOP;
 }
@@ -100,11 +88,6 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
         throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::InsufficientCapacity, CORBA::SystemException) 
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    /*if (not RFNoC_DefaultPersona_persona_base::allocateCapacity(capacities)) {
-        LOG_ERROR(RFNoC_DefaultPersona_i, "Failed to allocate parent class");
-        return false;
-    }*/
 
     bool allocationSuccess = false;
 
@@ -121,7 +104,7 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 
         if (allocationSuccess) {
             LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
-            this->resourceManager = new RFNoC_ResourceManager(this, this->usrp, this->connectRadioRXCb, this->connectRadioTXCb);
+            this->resourceManager = new RFNoC_ResourceManager(this, this->getUsrpCb(), this->connectRadioRXCb, this->connectRadioTXCb);
         }
     }
 
@@ -141,11 +124,8 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
     }
 
     this->enabled = false;
-    this->usrp.reset();
 
     attemptToUnprogramParent();
-
-    //RFNoC_DefaultPersona_persona_base::deallocateCapacity(capacities);
 
     this->_usageState = updateUsageState();
 }
@@ -187,23 +167,8 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    // Lock to prevent the service function from using this resource
-    /*boost::mutex::scoped_lock lock(this->resourceLock);
-
-    this->terminateWaiting = true;
-
-    while (this->resourceHeld) {
-        this->resourceAvailable.wait(lock);
-    }
-
-    this->resourceHeld = true;*/
-
     if (this->pidToComponentID.find(processId) == this->pidToComponentID.end()) {
         LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to terminate a process with an ID not tracked by this Device");
-        /*this->resourceHeld = false;
-        this->terminateWaiting = false;
-        this->resourceAvailable.notify_all();
-        lock.unlock();*/
         throw CF::ExecutableDevice::InvalidProcess();
     }
 
@@ -216,11 +181,6 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
 
     // Unmap the PID from the component identifier
     this->pidToComponentID.erase(processId);
-
-    /*this->resourceHeld = false;
-    this->terminateWaiting = false;
-    this->resourceAvailable.notify_all();
-    lock.unlock();*/
 
     // Call the parent terminate
     RFNoC_DefaultPersona_persona_base::terminate(processId);
@@ -240,6 +200,13 @@ void RFNoC_DefaultPersona_i::setConnectRadioTXCallback(connectRadioTXCallback cb
     this->connectRadioTXCb = cb;
 }
 
+void RFNoC_DefaultPersona_i::setGetUsrp(getUsrpCallback cb)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    this->getUsrpCb = cb;
+}
+
 void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
@@ -255,19 +222,9 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
     cb(hwLoadStatusObject);
 }
 
-void RFNoC_DefaultPersona_i::setUsrp(uhd::device3::sptr usrp)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    this->usrp = usrp;
-}
-
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    // Lock to prevent the service function from using this resource
-    //boost::mutex::scoped_lock lock(this->resourceLock);
 
     // Construct the resource
     Resource_impl *resource;
