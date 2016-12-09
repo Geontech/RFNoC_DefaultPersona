@@ -9,6 +9,8 @@
 #include <dlfcn.h>
 
 typedef std::string ResourceId;
+typedef std::map<ResourceId, void *> DlMap;
+typedef DlMap::iterator DlMapIter;
 typedef std::map<ResourceId, Resource_impl*> ResourceMap;
 typedef ResourceMap::iterator ResourceMapIter;
 typedef std::map<unsigned int, ResourceId> ProcessMap;
@@ -54,6 +56,7 @@ class RFNoC_DefaultPersona_persona_base : public RFNoC_DefaultPersona_base
         virtual bool hasRunningResources();
         virtual Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)=0;
     private:
+        DlMap                   _dlMap;
         Device_impl*            _parentDevice;
         bool                    _parentAllocated;
         CF::Properties          _previousRequestProps;

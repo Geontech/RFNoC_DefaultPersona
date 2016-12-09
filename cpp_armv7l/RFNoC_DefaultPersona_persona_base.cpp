@@ -216,6 +216,7 @@ void RFNoC_DefaultPersona_persona_base::terminate(CF::ExecutableDevice::ProcessI
     LOG_TRACE(RFNoC_DefaultPersona_persona_base, __PRETTY_FUNCTION__);
 
     // Initialize local variables
+    DlMapIter dlIter;
     ProcessMapIter processIter;
     ResourceMapIter resourceIter;
     ResourceId resourceId;
@@ -231,11 +232,17 @@ void RFNoC_DefaultPersona_persona_base::terminate(CF::ExecutableDevice::ProcessI
             // be released by the application factory
             delete resourceIter->second;
 
-            _processMap.erase(processIter);
             _resourceMap.erase(resourceIter);
-
-            return;
         }
+
+        dlIter = _dlMap.find(processIter->second);
+        if (dlIter != _dlMap.end()) {
+            dlclose(dlIter->second);
+
+            _dlMap.erase(dlIter);
+        }
+
+        _processMap.erase(processIter);
     }
 }
 
@@ -326,7 +333,10 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
 
     free(absPathC);
 
-    dlclose(pHandle);
+    // Save the dl handle
+    if (resourcePtr != NULL) {
+        _dlMap[resourcePtr->_identifier] = pHandle;
+    }
 
     return resourcePtr;
 }
