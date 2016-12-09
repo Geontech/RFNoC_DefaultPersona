@@ -326,6 +326,8 @@ Resource_impl* RFNoC_DefaultPersona_persona_base::instantiateResource(
 
     free(absPathC);
 
+    dlclose(pHandle);
+
     return resourcePtr;
 }
 

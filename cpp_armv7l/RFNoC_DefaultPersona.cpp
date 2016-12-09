@@ -182,7 +182,7 @@ CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char
         std::string id = parameters[i].id._ptr;
 
         if (id == "COMPONENT_IDENTIFIER") {
-            componentIdentifier += ossie::any_to_string(parameters[i].value);
+            componentIdentifier = ossie::any_to_string(parameters[i].value);
             break;
         }
     }
