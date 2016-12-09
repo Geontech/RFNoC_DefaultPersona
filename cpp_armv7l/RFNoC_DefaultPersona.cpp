@@ -79,7 +79,9 @@ int RFNoC_DefaultPersona_i::serviceFunction()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    this->resourceManager->update();
+    if (this->resourceManager) {
+        this->resourceManager->update();
+    }
 
     return NOOP;
 }
