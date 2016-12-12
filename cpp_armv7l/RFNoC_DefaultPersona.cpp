@@ -66,17 +66,6 @@ void RFNoC_DefaultPersona_i::constructor()
     this->hw_load_status.requester_id = "";
     this->hw_load_status.state = 0;
 
-    // Let the programmable device know about this device's hardware status
-    hw_load_status_object hwLoadStatusObject;
-
-    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
-    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
-    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
-    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
-    hwLoadStatusObject.state = this->hw_load_status.state;
-
-    this->hwLoadStatusCb(hwLoadStatusObject);
-
     LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << hw_load_status.hardware_id);
 
     this->setThreadDelay(1.0);
@@ -227,6 +216,17 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     this->hwLoadStatusCb = cb;
+
+    // Let the programmable device know about this device's hardware status
+    hw_load_status_object hwLoadStatusObject;
+
+    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
+    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
+    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
+    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
+    hwLoadStatusObject.state = this->hw_load_status.state;
+
+    this->hwLoadStatusCb(hwLoadStatusObject);
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
