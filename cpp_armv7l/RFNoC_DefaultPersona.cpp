@@ -20,7 +20,6 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
     resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-    construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev) :
@@ -29,7 +28,6 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
     resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-    construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities) :
@@ -38,7 +36,6 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
     resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-    construct();
 }
 
 RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev) :
@@ -47,7 +44,6 @@ RFNoC_DefaultPersona_i::RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char 
     resourceManager(NULL)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-    construct();
 }
 
 RFNoC_DefaultPersona_i::~RFNoC_DefaultPersona_i()
@@ -59,7 +55,7 @@ RFNoC_DefaultPersona_i::~RFNoC_DefaultPersona_i()
     }
 }
 
-void RFNoC_DefaultPersona_i::construct()
+void RFNoC_DefaultPersona_i::constructor()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
