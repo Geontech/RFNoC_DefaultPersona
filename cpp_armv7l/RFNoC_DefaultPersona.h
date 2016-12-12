@@ -17,7 +17,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         RFNoC_DefaultPersona_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev);
         ~RFNoC_DefaultPersona_i();
 
-        virtual void constructor();
+        void constructor();
 
         int serviceFunction();
         CORBA::Boolean allocateCapacity(const CF::Properties& capacities) 
