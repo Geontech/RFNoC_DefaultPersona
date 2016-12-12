@@ -129,6 +129,14 @@ void RFNoC_DefaultPersona_base::loadProperties()
                 "eq",
                 "allocation");
 
+    addProperty(load_filepath,
+                "load_filepath",
+                "",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
     addProperty(hw_load_status,
                 hw_load_status_struct(),
                 "hw_load_status",
@@ -136,7 +144,7 @@ void RFNoC_DefaultPersona_base::loadProperties()
                 "readonly",
                 "",
                 "external",
-                "configure");
+                "property");
 
 }
 

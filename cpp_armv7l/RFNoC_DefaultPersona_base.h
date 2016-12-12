@@ -38,6 +38,8 @@ class RFNoC_DefaultPersona_base : public ExecutableDevice_impl, public virtual P
         std::string os_name;
         /// Property: os_version
         std::string os_version;
+        /// Property: load_filepath
+        std::string load_filepath;
         /// Property: hw_load_status
         hw_load_status_struct hw_load_status;
 
