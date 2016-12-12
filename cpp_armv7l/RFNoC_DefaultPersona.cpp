@@ -226,7 +226,7 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
     hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
     hwLoadStatusObject.state = this->hw_load_status.state;
 
-    this->hwLoadStatusCb(hwLoadStatusObject);
+    this->hwLoadStatusCb(this->_identifier, hwLoadStatusObject);
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
@@ -306,5 +306,5 @@ void RFNoC_DefaultPersona_i::loadFilepathChanged(const std::string &oldValue, co
     hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
     hwLoadStatusObject.state = this->hw_load_status.state;
 
-    this->hwLoadStatusCb(hwLoadStatusObject);
+    this->hwLoadStatusCb(this->_identifier, hwLoadStatusObject);
 }
