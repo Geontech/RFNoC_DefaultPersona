@@ -64,7 +64,7 @@ void RFNoC_DefaultPersona_i::construct()
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     this->hw_load_status.hardware_id = "E310";
-    this->hw_load_status.load_filepath = this->load_filepath;
+    this->hw_load_status.load_filepath = this->loadFilepath;
     this->hw_load_status.request_id = "";
     this->hw_load_status.requester_id = "";
     this->hw_load_status.state = 0;
@@ -73,7 +73,7 @@ void RFNoC_DefaultPersona_i::construct()
 
     this->setThreadDelay(1.0);
 
-    this->addPropertyListener(this->load_filepath, this, &RFNoC_DefaultPersona_i::loadFilepathChanged);
+    this->addPropertyListener(this->loadFilepath, this, &RFNoC_DefaultPersona_i::loadFilepathChanged);
 
     this->start();
 }
@@ -285,13 +285,13 @@ void RFNoC_DefaultPersona_i::loadFilepathChanged(const std::string &oldValue, co
 
     if (this->enabled) {
         LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to change the load filepath while allocated. Please deallocate and try again");
-        this->load_filepath = oldValue;
+        this->loadFilepath = oldValue;
         return;
     }
 
     if (not boost::filesystem::exists(newValue)) {
         LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to change load filepath to a path which doesn't exist");
-        this->load_filepath = oldValue;
+        this->loadFilepath = oldValue;
         return;
     }
 
