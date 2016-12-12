@@ -46,7 +46,7 @@
     </simple>
     <configurationkind kindtype="property"/>
   </struct>
-  <simple id="load_filepath" mode="readwrite" type="string" commandline="true">
+  <simple id="loadFilepath" mode="readwrite" type="string">
     <description>The load file path for this persona.</description>
     <kind kindtype="property"/>
     <action type="external"/>

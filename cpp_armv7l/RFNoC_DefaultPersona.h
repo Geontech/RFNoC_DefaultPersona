@@ -5,19 +5,6 @@
 #include "RFNoC_Persona.h"
 #include "RFNoC_ResourceManager.h"
 
-#include <bulkio/BULKIO_Interfaces.h>
-#include <uhd/device3.hpp>
-
-struct ResourceInfo {
-    public:
-        std::vector<uhd::rfnoc::block_id_t> blockIDs;
-        std::vector<CORBA::ULong> providesPortHashes;
-        Resource_impl *resource;
-        setStreamerCallback setRxStreamerCb;
-        setStreamerCallback setTxStreamerCb;
-        std::vector<BULKIO::UsesPortStatisticsProvider_ptr> usesPorts;
-};
-
 class RFNoC_DefaultPersona_i;
 
 class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
@@ -56,6 +43,9 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
 
     private:
         CF::Device::UsageType updateUsageState();
+
+    private:
+        void loadFilepathChanged(const std::string &oldValue, const std::string &newValue);
 
     private:
         connectRadioRXCallback connectRadioRXCb;

@@ -129,13 +129,13 @@ void RFNoC_DefaultPersona_base::loadProperties()
                 "eq",
                 "allocation");
 
-    addProperty(load_filepath,
-                "load_filepath",
+    addProperty(loadFilepath,
+                "loadFilepath",
                 "",
                 "readwrite",
                 "",
                 "external",
-                "execparam,property");
+                "property");
 
     addProperty(hw_load_status,
                 hw_load_status_struct(),

@@ -9,6 +9,7 @@
 
 #include "RFNoC_DefaultPersona.h"
 
+#include <boost/filesystem.hpp>
 #include <frontend/frontend.h>
 
 PREPARE_LOGGING(RFNoC_DefaultPersona_i)
@@ -63,7 +64,7 @@ void RFNoC_DefaultPersona_i::construct()
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     this->hw_load_status.hardware_id = "E310";
-    this->hw_load_status.load_filepath = "/usr/share/uhd/images/usrp_e310_fpga.bit";
+    this->hw_load_status.load_filepath = this->load_filepath;
     this->hw_load_status.request_id = "";
     this->hw_load_status.requester_id = "";
     this->hw_load_status.state = 0;
@@ -71,6 +72,8 @@ void RFNoC_DefaultPersona_i::construct()
     LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << hw_load_status.hardware_id);
 
     this->setThreadDelay(1.0);
+
+    this->addPropertyListener(this->load_filepath, this, &RFNoC_DefaultPersona_i::loadFilepathChanged);
 
     this->start();
 }
@@ -274,4 +277,23 @@ CF::Device::UsageType RFNoC_DefaultPersona_i::updateUsageState()
     }
 
     return CF::Device::IDLE;
+}
+
+void RFNoC_DefaultPersona_i::loadFilepathChanged(const std::string &oldValue, const std::string &newValue)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    if (this->enabled) {
+        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to change the load filepath while allocated. Please deallocate and try again");
+        this->load_filepath = oldValue;
+        return;
+    }
+
+    if (not boost::filesystem::exists(newValue)) {
+        LOG_WARN(RFNoC_DefaultPersona_i, "Attempted to change load filepath to a path which doesn't exist");
+        this->load_filepath = oldValue;
+        return;
+    }
+
+    this->hw_load_status.load_filepath = newValue;
 }
