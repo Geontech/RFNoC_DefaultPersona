@@ -53,6 +53,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         bool enabled;
         getUsrpCallback getUsrpCb;
         RFNoC_ResourceManager *resourceManager;
+        hwLoadStatusCallback hwLoadStatusCb;
 
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToComponentID;
 };

@@ -63,11 +63,23 @@ void RFNoC_DefaultPersona_i::construct()
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
+    // Set the hardware load status property
     this->hw_load_status.hardware_id = "E310";
     this->hw_load_status.load_filepath = this->loadFilepath;
     this->hw_load_status.request_id = "";
     this->hw_load_status.requester_id = "";
     this->hw_load_status.state = 0;
+
+    // Let the programmable device know about this device's hardware status
+    hw_load_status_object hwLoadStatusObject;
+
+    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
+    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
+    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
+    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
+    hwLoadStatusObject.state = this->hw_load_status.state;
+
+    this->hwLoadStatusCb(hwLoadStatusObject);
 
     LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << hw_load_status.hardware_id);
 
@@ -218,15 +230,7 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    hw_load_status_object hwLoadStatusObject;
-
-    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
-    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
-    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
-    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
-    hwLoadStatusObject.state = this->hw_load_status.state;
-
-    cb(hwLoadStatusObject);
+    this->hwLoadStatusCb = cb;
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
@@ -296,4 +300,15 @@ void RFNoC_DefaultPersona_i::loadFilepathChanged(const std::string &oldValue, co
     }
 
     this->hw_load_status.load_filepath = newValue;
+
+    // Let the programmable device know about this device's hardware status
+    hw_load_status_object hwLoadStatusObject;
+
+    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
+    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
+    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
+    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
+    hwLoadStatusObject.state = this->hw_load_status.state;
+
+    this->hwLoadStatusCb(hwLoadStatusObject);
 }
