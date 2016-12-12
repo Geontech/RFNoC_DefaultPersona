@@ -135,7 +135,7 @@ void RFNoC_DefaultPersona_base::loadProperties()
                 "readwrite",
                 "",
                 "external",
-                "property");
+                "execparam,property");
 
     addProperty(hw_load_status,
                 hw_load_status_struct(),
