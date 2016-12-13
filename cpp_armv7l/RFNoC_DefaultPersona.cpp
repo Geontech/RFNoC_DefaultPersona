@@ -66,8 +66,6 @@ void RFNoC_DefaultPersona_i::constructor()
     this->hw_load_status.requester_id = "";
     this->hw_load_status.state = 0;
 
-    LOG_INFO(RFNoC_DefaultPersona_i, "Hardware ID: " << hw_load_status.hardware_id);
-
     this->setThreadDelay(1.0);
 
     this->addPropertyListener(this->loadFilepath, this, &RFNoC_DefaultPersona_i::loadFilepathChanged);
