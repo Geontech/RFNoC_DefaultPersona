@@ -41,7 +41,7 @@ class RFNoC_Resource
         bool connect(const RFNoC_Resource &provides);
         std::vector<std::string> getConnectionIDs() const;
         uhd::rfnoc::block_id_t getProvidesBlock() const;
-        std::vector<CORBA::ULong> getProvidesHashes() const { return this->providesHashes; }
+        std::vector<CORBA::ULong> getProvidesHashes() const;
         uhd::rfnoc::block_id_t getUsesBlock() const;
         bool hasHash(CORBA::ULong hash) const;
         std::string id() const { return this->ID; }
@@ -58,6 +58,7 @@ class RFNoC_Resource
 
     private:
         typedef std::map<CORBA::ULong, std::vector<std::string> > hashToConnectionIDs;
+        typedef std::map<CORBA::ULong, std::vector<std::string> > hashToStreamIDs;
         typedef std::pair<CORBA::ULong, CORBA::ULong> portHashPair;
 
         std::vector<uhd::rfnoc::block_id_t> blockIDs;
@@ -66,7 +67,8 @@ class RFNoC_Resource
         std::string ID;
         bool isRxStreamer;
         bool isTxStreamer;
-        std::vector<CORBA::ULong> providesHashes;
+        hashToStreamIDs providesHashToPreviousStreamIDs;
+        std::vector<BULKIO::ProvidesPortStatisticsProvider_ptr> providesPorts;
         RFNoC_ResourceManager *resourceManager;
         Resource_impl *rhResource;
         setStreamerCallback setRxStreamerCb;

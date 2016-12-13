@@ -97,6 +97,19 @@ uhd::rfnoc::block_id_t RFNoC_Resource::getProvidesBlock() const
     return this->blockIDs.front();
 }
 
+std::vector<CORBA::ULong> RFNoC_Resource::getProvidesHashes() const
+{
+    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
+
+    std::vector<CORBA::ULong> providesHashes;
+
+    for (hashToStreamIDs::const_iterator it = this->providesHashToPreviousStreamIDs.begin(); it != this->providesHashToPreviousStreamIDs.end(); ++it) {
+        providesHashes.push_back(it->first);
+    }
+
+    return providesHashes;
+}
+
 uhd::rfnoc::block_id_t RFNoC_Resource::getUsesBlock() const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
@@ -108,7 +121,7 @@ bool RFNoC_Resource::hasHash(CORBA::ULong hash) const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return std::find(this->providesHashes.begin(), this->providesHashes.end(), hash) != this->providesHashes.end();
+    return this->providesHashToPreviousStreamIDs.find(hash) != this->providesHashToPreviousStreamIDs.end();
 }
 
 Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
@@ -151,7 +164,17 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
         // Store the provides port hashes
         if (strstr(info.direction._ptr, "Provides") && strstr(info.repid._ptr, "BULKIO")) {
             CORBA::ULong hash = info.obj_ptr->_hash(1024);
-            this->providesHashes.push_back(hash);
+            BULKIO::ProvidesPortStatisticsProvider_ptr providesPort = BULKIO::ProvidesPortStatisticsProvider::_narrow(this->rhResource->getPort(info.name._ptr));
+
+            BULKIO::PortStatistics *statistics = providesPort->statistics();
+
+            for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
+                this->providesHashToPreviousStreamIDs[hash].push_back(statistics->streamIDs[j]._retn());
+            }
+
+            delete statistics;
+
+            this->providesPorts.push_back(providesPort);
         }
 
         // Store the uses port pointers
@@ -220,6 +243,36 @@ bool RFNoC_Resource::update()
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
     bool updated = false;
+
+    for (size_t i = 0; i < this->providesPorts.size(); ++i) {
+        BULKIO::ProvidesPortStatisticsProvider_ptr port = this->providesPorts[i];
+
+        if (not ossie::corba::objectExists(port)) {
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Port doesn't exist, skipping");
+            continue;
+        }
+
+        BULKIO::PortStatistics *statistics = port->statistics();
+        CORBA::ULong hash = port->_hash(1024);
+        std::vector<std::string> oldStreamIDs = this->providesHashToPreviousStreamIDs[hash];
+        std::vector<std::string> newStreamIDs;
+
+        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Checking stream IDs for provides port with hash: " << hash)
+
+        for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
+            newStreamIDs.push_back(statistics->streamIDs[j]._retn());
+        }
+
+        // For now we'll assume this is sufficient
+        // TODO: Make this more robust (perhaps cast the sequences to sets and do a diff)
+        if (oldStreamIDs != newStreamIDs) {
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Length of streamIDs has changed");
+            updated = true;
+        }
+
+        delete statistics;
+        this->providesHashToPreviousStreamIDs[hash] = newStreamIDs;
+    }
 
     for (size_t i = 0; i < this->usesPorts.size(); ++i) {
         BULKIO::UsesPortStatisticsProvider_ptr port = this->usesPorts[i];
