@@ -232,12 +232,12 @@ bool RFNoC_ResourceList::update()
                 foundProvides = (providesListIt != this->resourceList.end());
                 foundUses = (usesListIt != this->resourceList.end());
 
-                uhd::rfnoc::block_id_t providesBlockID, usesBlockID;
+                BlockInfo providesBlock, usesBlock;
 
-                providesBlockID = it2->second->getProvidesBlock();
-                usesBlockID = updatedResource->getUsesBlock();
+                providesBlock = it2->second->getProvidesBlock();
+                usesBlock = updatedResource->getUsesBlock();
 
-                LOG_DEBUG(RFNoC_ResourceList, "Connecting RFNoC_Resources: " << usesBlockID.to_string() << " -> " << providesBlockID.to_string());
+                LOG_DEBUG(RFNoC_ResourceList, "Connecting RFNoC_Resources: " << usesBlock.blockID.to_string() << " -> " << providesBlock.blockID.to_string());
 
                 if (not foundProvides and not foundUses) {
                     LOG_DEBUG(RFNoC_ResourceList, "Inserting both RFNoC_Resources into the list");
@@ -276,7 +276,7 @@ bool RFNoC_ResourceList::update()
     return (updatedResources.size() != 0);
 }
 
-void RFNoC_ResourceList::setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs)
+void RFNoC_ResourceList::setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos)
 {
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
 
@@ -289,7 +289,7 @@ void RFNoC_ResourceList::setBlockIDMapping(const std::string &resourceID, const 
 
     LOG_DEBUG(RFNoC_ResourceList, "Setting block IDs for Resource");
 
-    it->second->setBlockIDs(blockIDs);
+    it->second->setBlockInfos(blockInfos);
 }
 
 void RFNoC_ResourceList::setSetRxStreamer(const std::string &resourceID, setStreamerCallback cb)

@@ -24,6 +24,6 @@
 //          Within this cpp file:
 //          void* personaPtr = construct(argc, argv, SharedAPIObject);
 //
-typedef Resource_impl* (*ConstructorPtr)(int, char*[], Device_impl* parentDevice, uhd::device3::sptr usrp, blockIDCallback blockIDCb, setSetStreamerCallback setSetRxStreamerCb, setSetStreamerCallback setSetTxStreamerCb);
+typedef Resource_impl* (*ConstructorPtr)(int, char*[], Device_impl* parentDevice, uhd::device3::sptr usrp, blockInfoCallback blockInfoCb, setSetStreamerCallback setSetRxStreamerCb, setSetStreamerCallback setSetTxStreamerCb);
 
 #endif // RFNOC_DEFAULTPERSONA_ENTRY_POINTS_H

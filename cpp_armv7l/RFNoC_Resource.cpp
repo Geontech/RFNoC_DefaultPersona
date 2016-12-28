@@ -60,7 +60,12 @@ bool RFNoC_Resource::connect(const RFNoC_Resource &provides)
 
             LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Connecting ports");
 
-            this->graph->connect(this->getUsesBlock(), provides.getProvidesBlock());
+            BlockInfo providesBlock, usesBlock;
+
+            providesBlock = this->getProvidesBlock();
+            usesBlock = this->getUsesBlock();
+
+            this->graph->connect(usesBlock.blockID, usesBlock.port, providesBlock.blockID, providesBlock.port);
 
             this->connected.push_back(hashPair);
             connect = true;
@@ -90,11 +95,11 @@ std::vector<std::string> RFNoC_Resource::getConnectionIDs() const
     return connectionIDs;
 }
 
-uhd::rfnoc::block_id_t RFNoC_Resource::getProvidesBlock() const
+BlockInfo RFNoC_Resource::getProvidesBlock() const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return this->blockIDs.front();
+    return this->blockInfos.front();
 }
 
 std::vector<CORBA::ULong> RFNoC_Resource::getProvidesHashes() const
@@ -110,11 +115,11 @@ std::vector<CORBA::ULong> RFNoC_Resource::getProvidesHashes() const
     return providesHashes;
 }
 
-uhd::rfnoc::block_id_t RFNoC_Resource::getUsesBlock() const
+BlockInfo RFNoC_Resource::getUsesBlock() const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return this->blockIDs.back();
+    return this->blockInfos.back();
 }
 
 bool RFNoC_Resource::hasHash(CORBA::ULong hash) const
@@ -128,7 +133,7 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    blockIDCallback blockIdCb = boost::bind(&RFNoC_ResourceManager::setBlockIDMapping, this->resourceManager, _1, _2);
+    blockInfoCallback blockInfoCb = boost::bind(&RFNoC_ResourceManager::setBlockInfoMapping, this->resourceManager, _1, _2);
     setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetRxStreamer, this->resourceManager, _1, _2);
     setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetTxStreamer, this->resourceManager, _1, _2);
 
@@ -136,7 +141,7 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     bool failed = false;
 
     try {
-        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockIdCb, setSetRxStreamerCb, setSetTxStreamerCb);
+        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockInfoCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
         if (not rhResource) {
             LOG_ERROR(RFNoC_Resource, "Failed to instantiate RF-NoC resource");
@@ -314,15 +319,15 @@ bool RFNoC_Resource::operator==(const RFNoC_Resource &rhs) const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return (this->blockIDs == rhs.blockIDs);
+    return (this->blockInfos == rhs.blockInfos);
 }
 
-void RFNoC_Resource::setBlockIDs(const std::vector<uhd::rfnoc::block_id_t> &blockIDs)
+void RFNoC_Resource::setBlockInfos(const std::vector<BlockInfo> &blockInfos)
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    for (size_t i = 0; i < blockIDs.size(); ++i) {
-        std::string blockID = blockIDs[i].get();
+    for (size_t i = 0; i < blockInfos.size(); ++i) {
+        std::string blockID = blockInfos[i].blockID.get();
 
         if (blockID.find("Radio") != std::string::npos) {
             LOG_ERROR(RFNoC_Resource, "Unable to claim RF-NoC Resource with ID: " << blockID);
@@ -330,7 +335,7 @@ void RFNoC_Resource::setBlockIDs(const std::vector<uhd::rfnoc::block_id_t> &bloc
         }
     }
 
-    this->blockIDs = blockIDs;
+    this->blockInfos = blockInfos;
 }
 
 void RFNoC_Resource::setSetRxStreamer(setStreamerCallback cb)

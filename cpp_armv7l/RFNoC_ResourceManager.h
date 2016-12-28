@@ -33,7 +33,7 @@ class RFNoC_ResourceManager
         Device_impl* getParent() const { return this->parent; }
         uhd::device3::sptr getUsrp() { return this->usrp; }
 
-        void setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
+        void setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos);
         void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
         void setSetTxStreamer(const std::string &componentID, setStreamerCallback cb);
 

@@ -24,6 +24,8 @@ cpp_armv7l/libRFNoC_DefaultPersona_la-RFNoC_ResourceList.lo
 cpp_armv7l/libRFNoC_DefaultPersona_la-RFNoC_ResourceList.o
 cpp_armv7l/libRFNoC_DefaultPersona_la-RFNoC_ResourceManager.lo
 cpp_armv7l/libRFNoC_DefaultPersona_la-RFNoC_ResourceManager.o
+cpp_armv7l/libRFNoC_DefaultPersona_la-RFNoC_Utils.lo
+cpp_armv7l/libRFNoC_DefaultPersona_la-RFNoC_Utils.o
 cpp_armv7l/libRFNoC_DefaultPersona_la-main.lo
 cpp_armv7l/libRFNoC_DefaultPersona_la-main.o
 cpp_armv7l/libtool

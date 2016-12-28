@@ -39,7 +39,7 @@ class RFNoC_ResourceList
         void removeResource(const std::string &resourceID);
         bool update();
 
-        void setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
+        void setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockIDs);
         void setSetRxStreamer(const std::string &resourceID, setStreamerCallback cb);
         void setSetTxStreamer(const std::string &resourceID, setStreamerCallback cb);
 

@@ -20,6 +20,7 @@
 #include "RFNoC_Component.h"
 #include "RFNoC_ResourceList.h"
 #include "RFNoC_ResourceManager.h"
+#include "RFNoC_Utils.h"
 
 #define LOG_TRACE_ID(classname, id, expression)     LOG_TRACE(classname, id << ":" << expression)
 #define LOG_DEBUG_ID(classname, id, expression)     LOG_DEBUG(classname, id << ":" << expression)
@@ -40,9 +41,9 @@ class RFNoC_Resource
 
         bool connect(const RFNoC_Resource &provides);
         std::vector<std::string> getConnectionIDs() const;
-        uhd::rfnoc::block_id_t getProvidesBlock() const;
+        BlockInfo getProvidesBlock() const;
         std::vector<CORBA::ULong> getProvidesHashes() const;
-        uhd::rfnoc::block_id_t getUsesBlock() const;
+        BlockInfo getUsesBlock() const;
         bool hasHash(CORBA::ULong hash) const;
         std::string id() const { return this->ID; }
         Resource_impl *instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -52,7 +53,7 @@ class RFNoC_Resource
 
         bool operator==(const RFNoC_Resource &rhs) const;
 
-        void setBlockIDs(const std::vector<uhd::rfnoc::block_id_t> &blockIDs);
+        void setBlockInfos(const std::vector<BlockInfo> &blockInfos);
         void setSetRxStreamer(setStreamerCallback cb);
         void setSetTxStreamer(setStreamerCallback cb);
 
@@ -61,7 +62,7 @@ class RFNoC_Resource
         typedef std::map<CORBA::ULong, std::vector<std::string> > hashToStreamIDs;
         typedef std::pair<CORBA::ULong, CORBA::ULong> portHashPair;
 
-        std::vector<uhd::rfnoc::block_id_t> blockIDs;
+        std::vector<BlockInfo> blockInfos;
         std::vector<portHashPair> connected;
         uhd::rfnoc::graph::sptr graph;
         std::string ID;

@@ -185,7 +185,9 @@ bool RFNoC_ResourceManager::update()
 
             LOG_DEBUG(RFNoC_ResourceManager, "Checking provides hash: " << hash);
 
-            if (this->connectRadioRXCb(hash, providesResource->getProvidesBlock(), uhd::rfnoc::ANY_PORT)) {
+            BlockInfo providesBlock = providesResource->getProvidesBlock();
+
+            if (this->connectRadioRXCb(hash, providesBlock.blockID, providesBlock.port)) {
                 LOG_DEBUG(RFNoC_ResourceManager, "Connection succeeded");
                 firstConnected = true;
                 break;
@@ -208,7 +210,9 @@ bool RFNoC_ResourceManager::update()
 
             LOG_DEBUG(RFNoC_ResourceManager, "Checking connection ID: " << connectionID);
 
-            if (this->connectRadioTXCb(connectionID, usesResource->getUsesBlock(), uhd::rfnoc::ANY_PORT)) {
+            BlockInfo usesBlock = usesResource->getUsesBlock();
+
+            if (this->connectRadioTXCb(connectionID, usesBlock.blockID, usesBlock.port)) {
                 LOG_DEBUG(RFNoC_ResourceManager, "Connection succeeded");
                 lastConnected = true;
                 break;
@@ -224,7 +228,7 @@ bool RFNoC_ResourceManager::update()
     return updatedAny;
 }
 
-void RFNoC_ResourceManager::setBlockIDMapping(const std::string &resourceID, const std::vector<uhd::rfnoc::block_id_t> &blockIDs)
+void RFNoC_ResourceManager::setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
@@ -237,7 +241,7 @@ void RFNoC_ResourceManager::setBlockIDMapping(const std::string &resourceID, con
 
     LOG_DEBUG(RFNoC_ResourceManager, "Setting block IDs for Resource");
 
-    it->second->setBlockIDMapping(resourceID, blockIDs);
+    it->second->setBlockInfoMapping(resourceID, blockInfos);
 }
 
 void RFNoC_ResourceManager::setSetRxStreamer(const std::string &resourceID, setStreamerCallback cb)
