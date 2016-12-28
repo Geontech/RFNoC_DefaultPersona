@@ -139,9 +139,11 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
         this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockIdCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
         if (not rhResource) {
+            LOG_ERROR(RFNoC_Resource, "Failed to instantiate RF-NoC resource");
             failed = true;
         }
     } catch(...) {
+        LOG_ERROR(RFNoC_Resource, "Exception occurred while instantiating RF-NoC resource");
         failed = true;
     }
 
