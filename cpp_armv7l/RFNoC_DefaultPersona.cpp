@@ -227,6 +227,13 @@ void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
     this->hwLoadStatusCb(this->_identifier, hwLoadStatusObject);
 }
 
+BlockInfo RFNoC_DefaultPersona_i::getBlockInfoFromHash(const CORBA::ULong &portHash)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    return this->resourceManager->getBlockInfoFromHash(portHash);
+}
+
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);

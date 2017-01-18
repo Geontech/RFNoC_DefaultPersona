@@ -228,6 +228,19 @@ bool RFNoC_ResourceManager::update()
     return updatedAny;
 }
 
+BlockInfo RFNoC_ResourceManager::getBlockInfoFromHash(const CORBA::ULong &hash) const
+{
+    LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
+
+    for (RFNoC_ListMap::const_iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
+        if (it->second->hasHash(hash)) {
+            return it->second->getProvidesResource()->getProvidesBlock();
+        }
+    }
+
+    return BlockInfo;
+}
+
 void RFNoC_ResourceManager::setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);

@@ -32,6 +32,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         virtual void terminate (CF::ExecutableDevice::ProcessID_Type processId)
                     throw ( CF::Device::InvalidState, CF::ExecutableDevice::InvalidProcess, CORBA::SystemException);
 
+        BlockInfo getBlockInfoFromHash(const CORBA::ULong &portHash);
         void setConnectRadioRXCallback(connectRadioRXCallback cb);
         void setConnectRadioTXCallback(connectRadioTXCallback cb);
         void setGetUsrp(getUsrpCallback cb);

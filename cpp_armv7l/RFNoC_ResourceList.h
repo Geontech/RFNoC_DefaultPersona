@@ -34,6 +34,7 @@ class RFNoC_ResourceList
         std::vector<std::string> getIDs();
         RFNoC_Resource* getProvidesResource() const;
         RFNoC_Resource* getUsesResource() const;
+        bool hasHash(const CORBA::ULong &hash) const;
         bool hasResource(const RFNoC_Resource *resource);
         void merge(RFNoC_ResourceList *providesList);
         void removeResource(const std::string &resourceID);

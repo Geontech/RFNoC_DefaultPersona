@@ -27,7 +27,7 @@ int main(int argc, char* argv[])
 }
 
 extern "C" {
-    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, connectRadioRXCallback connectRadioRXCb, connectRadioTXCallback connectRadioTXCb, getUsrpCallback getUsrpCb, hwLoadStatusCallback hwLoadStatusCb) {
+    Device_impl* construct(int argc, char* argv[], Device_impl* parentDevice, connectRadioRXCallback connectRadioRXCb, connectRadioTXCallback connectRadioTXCb, getUsrpCallback getUsrpCb, hwLoadStatusCallback hwLoadStatusCb, setGetBlockInfoFromHashCallback setGetBlockInfoFromHashCb) {
 
         struct sigaction sa;
         sa.sa_handler = signal_catcher;
@@ -46,6 +46,7 @@ extern "C" {
         devicePtr->setConnectRadioTXCallback(connectRadioTXCb);
         devicePtr->setGetUsrp(getUsrpCb);
         devicePtr->setHwLoadStatusCallback(hwLoadStatusCb);
+        setGetBlockInfoFromHashCb(devicePtr->_identifier, boost::bind(&RFNoC_DefaultPersona_i::getBlockInfoFromHash, devicePtr, _1));
 
         return devicePtr;
     }

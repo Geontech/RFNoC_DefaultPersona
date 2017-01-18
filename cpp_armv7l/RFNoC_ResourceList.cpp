@@ -146,8 +146,23 @@ RFNoC_Resource* RFNoC_ResourceList::getUsesResource() const
     return this->resourceList.back();
 }
 
+bool RFNoC_ResourceList::hasHash(const CORBA::ULong &hash) const
+{
+    LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
+
+    for (RFNoC_ResourceMap::const_iterator it = this->idToResource.begin(); it != this->idToResource.end(); ++it) {
+        if (it->second->hasHash(hash)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool RFNoC_ResourceList::hasResource(const RFNoC_Resource *resource)
 {
+    LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);
+
     return (this->idToResource.find(resource->id()) != this->idToResource.end());
 }
 

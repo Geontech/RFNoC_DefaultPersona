@@ -30,6 +30,7 @@ class RFNoC_ResourceManager
         void removeResource(const std::string &resourceID);
         bool update();
 
+        BlockInfo getBlockInfoFromHash(const CORBA::ULong &hash) const;
         Device_impl* getParent() const { return this->parent; }
         uhd::device3::sptr getUsrp() { return this->usrp; }
 
