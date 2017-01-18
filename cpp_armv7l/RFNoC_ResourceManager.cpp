@@ -238,7 +238,7 @@ BlockInfo RFNoC_ResourceManager::getBlockInfoFromHash(const CORBA::ULong &hash) 
         }
     }
 
-    return BlockInfo;
+    return BlockInfo();
 }
 
 void RFNoC_ResourceManager::setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos)
