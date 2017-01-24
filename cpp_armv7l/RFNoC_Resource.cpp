@@ -175,6 +175,8 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
 
             LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding provides port with hash: " << hash);
 
+            this->providesHashToPreviousStreamIDs[hash].clear();
+
             BULKIO::PortStatistics *statistics = providesPort->statistics();
 
             for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
@@ -192,6 +194,8 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
             BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(this->rhResource->getPort(info.name._ptr));
 
             LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding uses port with hash: " << hash);
+
+            this->usesHashToPreviousConnectionIDs[hash].clear();
 
             ExtendedCF::UsesConnectionSequence *connections = usesPort->connections();
 
