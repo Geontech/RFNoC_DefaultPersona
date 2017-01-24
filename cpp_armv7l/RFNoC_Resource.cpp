@@ -173,6 +173,8 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
             CORBA::ULong hash = info.obj_ptr->_hash(1024);
             BULKIO::ProvidesPortStatisticsProvider_ptr providesPort = BULKIO::ProvidesPortStatisticsProvider::_narrow(this->rhResource->getPort(info.name._ptr));
 
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding provides port with hash: " << hash);
+
             BULKIO::PortStatistics *statistics = providesPort->statistics();
 
             for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
@@ -188,6 +190,8 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
         if (strstr(info.direction._ptr, "Uses") && strstr(info.repid._ptr, "BULKIO")) {
             CORBA::ULong hash = info.obj_ptr->_hash(1024);
             BULKIO::UsesPortStatisticsProvider_ptr usesPort = BULKIO::UsesPortStatisticsProvider::_narrow(this->rhResource->getPort(info.name._ptr));
+
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding uses port with hash: " << hash);
 
             ExtendedCF::UsesConnectionSequence *connections = usesPort->connections();
 
