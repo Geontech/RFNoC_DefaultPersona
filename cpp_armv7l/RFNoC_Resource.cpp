@@ -62,7 +62,7 @@ bool RFNoC_Resource::connect(const RFNoC_Resource &provides)
 
             BlockInfo providesBlock, usesBlock;
 
-            providesBlock = this->getProvidesBlock();
+            providesBlock = provides.getProvidesBlock();
             usesBlock = this->getUsesBlock();
 
             this->graph->connect(usesBlock.blockID, usesBlock.port, providesBlock.blockID, providesBlock.port);
