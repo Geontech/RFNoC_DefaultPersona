@@ -95,47 +95,13 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
         return false;
     }
 
-    // Get the block ID from the allocation request
-    redhawk::PropertyMap props = redhawk::PropertyMap::cast(capacities);
-    block_status_struct *bs = NULL;
-
-    if (props.contains("block_allocation")) {
-        LOG_DEBUG(RFNoC_DefaultPersona_i, "Found block_allocation allocation property");
-
-        std::string blockAllocation = props["block_allocation"].toString();
-
-        bool foundBlockAllocation = false;
-
-        for (size_t i = 0; i < this->blocks_status.size(); ++i) {
-            if ((this->blocks_status[i].block == blockAllocation) and (this->blocks_status[i].available)) {
-                LOG_DEBUG(RFNoC_DefaultPersona_i, "Found available block");
-                bs = &this->blocks_status[i];
-                foundBlockAllocation = true;
-                break;
-            }
-        }
-
-        if (not foundBlockAllocation) {
-            LOG_DEBUG(RFNoC_DefaultPersona_i, "Did not find available block");
-            throw CF::Device::InvalidCapacity();
-        }
-    } else {
-        LOG_DEBUG(RFNoC_DefaultPersona_i, "Did not find block_allocation allocation property");
-        throw CF::Device::InvalidCapacity();
-    }
-
     // Program the parent and instantiate a resource manager, if necessary
     bool allocationSuccess = attemptToProgramParent();
 
-    if (allocationSuccess) {
-        if (not this->enabled) {
-            LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
-            this->resourceManager = new RFNoC_ResourceManager(this, this->getUsrpCb(), this->connectRadioRXCb, this->connectRadioTXCb);
-            this->enabled = true;
-        }
-
-        // Mark the block as taken
-        bs->available = false;
+    if (allocationSuccess and not this->enabled) {
+        LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
+        this->resourceManager = new RFNoC_ResourceManager(this, this->getUsrpCb(), this->connectRadioRXCb, this->connectRadioTXCb);
+        this->enabled = true;
     }
 
     this->_usageState = updateUsageState();
@@ -148,55 +114,14 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    // Get the block ID from the allocation request
-    redhawk::PropertyMap props = redhawk::PropertyMap::cast(capacities);
-    block_status_struct *bs = NULL;
-
-    if (props.contains("block_allocation")) {
-        LOG_DEBUG(RFNoC_DefaultPersona_i, "Found block_allocation allocation property");
-
-        std::string blockAllocation = props["block_allocation"].toString();
-
-        bool foundBlockAllocation = false;
-
-        for (size_t i = 0; i < this->blocks_status.size(); ++i) {
-            if ((this->blocks_status[i].block == blockAllocation) and (not this->blocks_status[i].available)) {
-                LOG_DEBUG(RFNoC_DefaultPersona_i, "Found unavailable block");
-                bs = &this->blocks_status[i];
-                foundBlockAllocation = true;
-                break;
-            }
-        }
-
-        if (not foundBlockAllocation) {
-            LOG_DEBUG(RFNoC_DefaultPersona_i, "Did not find unavailable block");
-            throw CF::Device::InvalidCapacity();
-        }
-    } else {
-        LOG_DEBUG(RFNoC_DefaultPersona_i, "Did not find block_allocation allocation property");
-        throw CF::Device::InvalidCapacity();
+    if (this->resourceManager) {
+        delete this->resourceManager;
+        this->resourceManager = NULL;
     }
 
-    // Mark the block as available
-    bs->available = true;
+    this->enabled = false;
 
-    // Disable and unprogram if necessary
-    bool allBlocksAvailable = true;
-
-    for (size_t i = 0; i < this->blocks_status.size(); ++i) {
-        allBlocksAvailable &= this->blocks_status[i].available;
-    }
-
-    if (allBlocksAvailable) {
-        if (this->resourceManager) {
-            delete this->resourceManager;
-            this->resourceManager = NULL;
-        }
-
-        this->enabled = false;
-
-        attemptToUnprogramParent();
-    }
+    attemptToUnprogramParent();
 
     this->_usageState = updateUsageState();
 }

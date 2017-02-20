@@ -40,12 +40,10 @@ class RFNoC_DefaultPersona_base : public ExecutableDevice_impl, public virtual P
         std::string os_version;
         /// Property: loadFilepath
         std::string loadFilepath;
-        /// Property: block_allocation
-        std::string block_allocation;
+        /// Property: available_blocks
+        std::vector<std::string> available_blocks;
         /// Property: hw_load_status
         hw_load_status_struct hw_load_status;
-        /// Property: blocks_status
-        std::vector<block_status_struct> blocks_status;
 
     private:
         void construct();

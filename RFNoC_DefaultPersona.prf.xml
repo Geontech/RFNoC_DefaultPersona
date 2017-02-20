@@ -51,17 +51,9 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="block_allocation" mode="readwrite" type="string">
-    <kind kindtype="allocation"/>
+  <simplesequence id="available_blocks" mode="readwrite" type="string">
+    <description>The list of available block IDs in this persona bitfile.</description>
+    <kind kindtype="property"/>
     <action type="external"/>
-  </simple>
-  <structsequence id="blocks_status" mode="readwrite">
-    <struct id="block_status">
-      <simple id="block_status::block_id" name="block" type="string"/>
-      <simple id="block_status::available" name="available" type="boolean">
-        <value>true</value>
-      </simple>
-    </struct>
-    <configurationkind kindtype="property"/>
-  </structsequence>
+  </simplesequence>
 </properties>
