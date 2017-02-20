@@ -129,11 +129,15 @@ bool RFNoC_ResourceManager::update()
         bool foundConnection = false;
         RFNoC_ResourceList *updatedResourceList = *it;
 
+        LOG_DEBUG(RFNoC_ResourceManager, "Got updatedResourceList, checking if it's in the map: " << updatedResourceList);
+
         std::map<RFNoC_ResourceList *, RFNoC_ResourceList *>::iterator remappedIt = remappedList.find(updatedResourceList);
 
         if (remappedIt != remappedList.end()) {
-            LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that was remapped");
+            LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that was remapped: " << remappedList[updatedResourceList]);
             updatedResourceList = remappedList[updatedResourceList];
+        } else {
+            LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that wasn't remapped");
         }
 
         for (RFNoC_ListMap::iterator it2 = this->idToList.begin(); it2 != this->idToList.end(); ++it2) {
