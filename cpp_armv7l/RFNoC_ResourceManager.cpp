@@ -241,7 +241,7 @@ bool RFNoC_ResourceManager::update()
     }
 
     // Remove the remapped lists
-    for (std::map<std::string, RFNoC_ResourceList *>::iterator it = remappedLists.begin(); it != remappedLists.end();) {
+    for (std::map<std::string, RFNoC_ResourceList *>::iterator it = remappedLists.begin(); it != remappedLists.end(); ++it) {
         this->idToList.erase(it->second->getID());
         delete it->second;
     }
