@@ -73,17 +73,6 @@ void RFNoC_DefaultPersona_i::constructor()
     this->start();
 }
 
-int RFNoC_DefaultPersona_i::serviceFunction()
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    if (this->resourceManager) {
-        this->resourceManager->update();
-    }
-
-    return NOOP;
-}
-
 CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& capacities)
         throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::InsufficientCapacity, CORBA::SystemException) 
 {

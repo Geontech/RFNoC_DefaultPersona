@@ -19,7 +19,7 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
 
         void constructor();
 
-        int serviceFunction();
+        int serviceFunction() { return FINISH; }
         CORBA::Boolean allocateCapacity(const CF::Properties& capacities) 
             throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::InsufficientCapacity, CORBA::SystemException);
         void deallocateCapacity(const CF::Properties& capacities) 

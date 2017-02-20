@@ -29,6 +29,9 @@
 #define LOG_ERROR_ID(classname, id, expression)     LOG_ERROR(classname, id << ":" << expression)
 #define LOG_FATAL_ID(classname, id, expression)     LOG_FATAL(classname, id << ":" << expression)
 
+// An enumeration for the connection type
+enum ConnectionType { NONE, FABRIC, RADIO, STREAMER };
+
 // Forward declaration of other classes
 class RFNoC_ResourceManager;
 
@@ -36,7 +39,7 @@ class RFNoC_Resource
 {
     ENABLE_LOGGING
     public:
-        RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph);
+        RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph, connectRadioRXCallback connectRadioRxCb, connectRadioTXCallback connectRadioTxCb);
         virtual ~RFNoC_Resource();
 
         bool connect(const RFNoC_Resource &provides);
@@ -68,6 +71,9 @@ class RFNoC_Resource
 
         std::vector<BlockInfo> blockInfos;
         std::vector<portHashPair> connected;
+        std::map<std::string, ConnectionType> connectionIdToConnectionType;
+        connectRadioRXCallback connectRadioRxCb;
+        connectRadioTXCallback connectRadioTxCb;
         uhd::rfnoc::graph::sptr graph;
         std::string ID;
         bool isRxStreamer;
