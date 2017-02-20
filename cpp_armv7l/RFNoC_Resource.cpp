@@ -235,7 +235,7 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
 
                     BlockInfo usesBlockInfo = getUsesBlock();
 
-                    this->graph(usesBlockInfo.blockID, usesBlockInfo.port, providesBlockInfo.blockID, providesBlockInfo.port);
+                    this->graph->connect(usesBlockInfo.blockID, usesBlockInfo.port, providesBlockInfo.blockID, providesBlockInfo.port);
 
                     this->connectionIdToConnectionType[ID] = FABRIC;
                 }
