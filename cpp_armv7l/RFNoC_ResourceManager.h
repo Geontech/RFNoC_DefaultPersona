@@ -16,7 +16,7 @@
 #include "RFNoC_Persona.h"
 
 // Forward declaration of other classes
-class RFNoC_ResourceList;
+class RFNoC_Resource;
 
 class RFNoC_ResourceManager
 {

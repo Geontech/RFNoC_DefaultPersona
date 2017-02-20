@@ -156,7 +156,9 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID)
                 LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
 
                 if (this->connectRadioRxCb) {
-                    if (this->connectRadioRxCb(ID)) {
+                    BlockInfo providesBlockInfo = getProvidesBlock();
+
+                    if (this->connectRadioRxCb(hash, providesBlockInfo.blockID, providesBlockInfo.port)) {
                         LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
                         this->connectionIdToConnectionType[ID] = RADIO;
                     }
@@ -213,7 +215,9 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
                     LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to TX Radio");
 
                     if (this->connectRadioTxCb) {
-                        if (this->connectRadioTxCb(ID)) {
+                        BlockInfo usesBlockInfo = getUsesBlock();
+
+                        if (this->connectRadioTxCb(ID, usesBlockInfo.blockID, usesBlockInfo.port)) {
                             LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to TX radio");
                             this->connectionIdToConnectionType[ID] = RADIO;
                         }
@@ -227,7 +231,7 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
                 }
                 // If so, connect to the provides RF-NoC block
                 else {
-                    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is managed by this RF-NoC Persona. Attempting to connect to " << blockInfo.blockID.to_string());
+                    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is managed by this RF-NoC Persona. Attempting to connect to " << providesBlockInfo.blockID.to_string());
 
                     BlockInfo usesBlockInfo = getUsesBlock();
 
