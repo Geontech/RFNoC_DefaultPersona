@@ -7,6 +7,8 @@
 
 #include "RFNoC_ResourceList.h"
 
+#include <frontend/frontend.h>
+
 bool resource_is_equal(const RFNoC_Resource &s, const RFNoC_Resource *p)
 {
     return s == *p;
@@ -16,6 +18,7 @@ PREPARE_LOGGING(RFNoC_ResourceList)
 
 RFNoC_ResourceList::RFNoC_ResourceList(RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph) :
     graph(graph),
+    ID(frontend::uuidGenerator()),
     resourceManager(resourceManager)
 {
     LOG_TRACE(RFNoC_ResourceList, __PRETTY_FUNCTION__);

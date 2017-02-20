@@ -46,11 +46,10 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
 
     LOG_DEBUG(RFNoC_ResourceManager, "Adding Resource with ID: " << resourceID);
 
-    RFNoC_ListMap::iterator listMapIt = this->idToList.find(resourceID);
+    RFNoC_ListMap::iterator listMapIt = this->resourceIdToList.find(resourceID);
 
-    if (listMapIt != this->idToList.end()) {
+    if (listMapIt != this->resourceIdToList.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to add a Resource already tracked by the Resource Manager.");
-        resourceID.clear();
         return NULL;
     }
 
@@ -60,7 +59,8 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
 
     LOG_DEBUG(RFNoC_ResourceManager, "Mapping Resource ID to RFNoC_ResourceList");
 
-    this->idToList[resourceID] = newResourceList;
+    this->idToList[resourceID] = newResourceList->getID();
+    this->resourceIdToList[resourceID] = newResourceList;
 
     LOG_DEBUG(RFNoC_ResourceManager, "Adding RFNoC_Resource to RFNoC_ResourceList");
 
@@ -68,8 +68,9 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
 
     if (not resource) {
         LOG_ERROR(RFNoC_ResourceManager, "Failed to add new resource, cleaning up");
+        this->idToList.erase(newResourceList->getID());
         delete newResourceList;
-        this->idToList.erase(resourceID);
+        this->resourceIdToList.erase(resourceID);
     }
 
     return resource;
@@ -83,12 +84,12 @@ void RFNoC_ResourceManager::removeResource(const std::string &resourceID)
 
     LOG_DEBUG(RFNoC_ResourceManager, "Removing Resource with ID: " << resourceID);
 
-    if (this->idToList.find(resourceID) == this->idToList.end()) {
+    if (this->resourceIdToList.find(resourceID) == this->resourceIdToList.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to remove a Resource not tracked by the Resource Manager");
         return;
     }
 
-    RFNoC_ResourceList *resourceList = this->idToList[resourceID];
+    RFNoC_ResourceList *resourceList = this->resourceIdToList[resourceID];
 
     LOG_DEBUG(RFNoC_ResourceManager, "Removing the Resource from the RFNoC_ResourceList");
 
@@ -96,12 +97,13 @@ void RFNoC_ResourceManager::removeResource(const std::string &resourceID)
 
     if (resourceList->empty()) {
         LOG_DEBUG(RFNoC_ResourceManager, "Deleting empty RFNoC_ResourceList from RFNoC_ResourceManager");
+        this->idToList.erase(resourceList->getID());
         delete resourceList;
     }
 
     LOG_DEBUG(RFNoC_ResourceManager, "Unmapping Resource from RFNoC_ResourceManager");
 
-    this->idToList.erase(resourceID);
+    this->resourceIdToList.erase(resourceID);
 }
 
 bool RFNoC_ResourceManager::update()
@@ -111,43 +113,43 @@ bool RFNoC_ResourceManager::update()
     boost::mutex::scoped_lock lock(this->resourceLock);
 
     bool updatedAny = false;
-    std::vector<RFNoC_ResourceList *> updatedResourcesLists;
+    std::vector<RFNoC_ResourceList *> updatedResourceLists;
 
     for (RFNoC_ListMap::iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
         bool updated = it->second->update();
 
         if (updated) {
-            updatedResourcesLists.push_back(it->second);
+            updatedResourceLists.push_back(it->second);
         }
 
         updatedAny |= updated;
     }
 
-    std::map<RFNoC_ResourceList *, RFNoC_ResourceList *> remappedList;
+    std::map<std::string, RFNoC_ResourceList *> remappedLists;
 
-    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourcesLists.begin(); it != updatedResourcesLists.end(); ++it) {
+    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourceLists.begin(); it != updatedResourceLists.end(); ++it) {
         bool foundConnection = false;
         RFNoC_ResourceList *updatedResourceList = *it;
 
-        LOG_DEBUG(RFNoC_ResourceManager, "Got updatedResourceList, checking if it's in the map: " << updatedResourceList);
+        LOG_DEBUG(RFNoC_ResourceManager, "Got updatedResourceList, checking if it's in the map: " << updatedResourceList->getID());
 
-        std::map<RFNoC_ResourceList *, RFNoC_ResourceList *>::iterator remappedIt = remappedList.find(updatedResourceList);
+        std::map<std::string, RFNoC_ResourceList *>::iterator remappedIt = remappedLists.find(updatedResourceList->getID());
 
-        if (remappedIt != remappedList.end()) {
-            LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that was remapped: " << remappedList[updatedResourceList]);
-            updatedResourceList = remappedList[updatedResourceList];
+        if (remappedIt != remappedLists.end()) {
+            LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that was remapped: " << remappedLists[updatedResourceList->getID()]->getID());
+            updatedResourceList = remappedLists[updatedResourceList->getID()];
         } else {
             LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that wasn't remapped");
         }
 
         for (RFNoC_ListMap::iterator it2 = this->idToList.begin(); it2 != this->idToList.end(); ++it2) {
-            if (updatedResourceList->getIDs() == it2->second->getIDs()) {
+            if (updatedResourceList->getID() == it2->second->getID()) {
                 LOG_DEBUG(RFNoC_ResourceManager, "Skipping check for connect for this resource list. Feedback not currently available.");
                 continue;
             }
 
             if (updatedResourceList->connect(*it2->second)) {
-                LOG_DEBUG(RFNoC_ResourceManager, "Connected, merging: " << it2->second);
+                LOG_DEBUG(RFNoC_ResourceManager, "Connected, merging: " << it2->second->getID());
 
                 // Merge the lists
                 updatedResourceList->merge(it2->second);
@@ -157,12 +159,12 @@ bool RFNoC_ResourceManager::update()
                 std::vector<std::string> resourceIDs = it2->second->getIDs();
 
                 for (std::vector<std::string>::iterator idIt = resourceIDs.begin(); idIt != resourceIDs.end(); ++idIt) {
-                    this->idToList[*idIt] = updatedResourceList;
+                    this->resourceIdToList[*idIt] = updatedResourceList;
                 }
 
                 LOG_DEBUG(RFNoC_ResourceManager, "B");
 
-                remappedList[it2->second] = updatedResourceList;
+                remappedLists[it2->second->getID()] = updatedResourceList;
 
                 foundConnection = true;
                 break;
@@ -171,7 +173,7 @@ bool RFNoC_ResourceManager::update()
 
         if (foundConnection) {
             LOG_DEBUG(RFNoC_ResourceManager, "C");
-            it = updatedResourcesLists.erase(it);
+            it = updatedResourceLists.erase(it);
             LOG_DEBUG(RFNoC_ResourceManager, "D");
         }
     }
@@ -179,7 +181,7 @@ bool RFNoC_ResourceManager::update()
     LOG_DEBUG(RFNoC_ResourceManager, "E");
 
     // Anything left should be connected to the radio or set as streamers
-    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourcesLists.begin(); it != updatedResourcesLists.end(); ++it) {
+    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourceLists.begin(); it != updatedResourceLists.end(); ++it) {
         // TODO: Support updating the vector of RFNoC_Resources for multiple changes at once
         RFNoC_ResourceList *updatedResourceList = *it;
         RFNoC_Resource *providesResource = updatedResourceList->getProvidesResource();
@@ -259,9 +261,9 @@ void RFNoC_ResourceManager::setBlockInfoMapping(const std::string &resourceID, c
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    RFNoC_ListMap::iterator it = this->idToList.find(resourceID);
+    RFNoC_ListMap::iterator it = this->resourceIdToList.find(resourceID);
 
-    if (it == this->idToList.end()) {
+    if (it == this->resourceIdToList.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to set Block ID for unknown Resource: " << resourceID);
         return;
     }
@@ -275,9 +277,9 @@ void RFNoC_ResourceManager::setSetRxStreamer(const std::string &resourceID, setS
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    RFNoC_ListMap::iterator it = this->idToList.find(resourceID);
+    RFNoC_ListMap::iterator it = this->resourceIdToList.find(resourceID);
 
-    if (it == this->idToList.end()) {
+    if (it == this->resourceIdToList.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to set setRxStreamer for unknown Resource: " << resourceID);
         return;
     }
@@ -291,9 +293,9 @@ void RFNoC_ResourceManager::setSetTxStreamer(const std::string &resourceID, setS
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    RFNoC_ListMap::iterator it = this->idToList.find(resourceID);
+    RFNoC_ListMap::iterator it = this->resourceIdToList.find(resourceID);
 
-    if (it == this->idToList.end()) {
+    if (it == this->resourceIdToList.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to set setTxStreamer for unknown Resource: " << resourceID);
         return;
     }

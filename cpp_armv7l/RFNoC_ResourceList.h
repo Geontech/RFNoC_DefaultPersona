@@ -31,6 +31,7 @@ class RFNoC_ResourceList
         Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName, std::string resourceID);
         bool connect(RFNoC_ResourceList &providesList);
         bool empty();
+        std::string getID() const { return this->ID; }
         std::vector<std::string> getIDs();
         RFNoC_Resource* getProvidesResource() const;
         RFNoC_Resource* getUsesResource() const;
@@ -48,6 +49,7 @@ class RFNoC_ResourceList
         typedef std::map<std::string, RFNoC_Resource *> RFNoC_ResourceMap;
 
         uhd::rfnoc::graph::sptr graph;
+        std::string ID;
         RFNoC_ResourceMap idToResource;
         std::list<RFNoC_Resource *> resourceList;
         RFNoC_ResourceManager *resourceManager;
