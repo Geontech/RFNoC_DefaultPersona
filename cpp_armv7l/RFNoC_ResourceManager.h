@@ -15,8 +15,10 @@
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/graph.hpp>
 
+#include "entry_point.h"
 #include "RFNoC_Component.h"
 #include "RFNoC_Persona.h"
+#include "RFNoC_Resource.h"
 
 // Forward declaration of other classes
 class RFNoC_Resource;
