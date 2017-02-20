@@ -57,9 +57,12 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
 
     RFNoC_ResourceList *newResourceList = new RFNoC_ResourceList(this, this->graph);
 
-    LOG_DEBUG(RFNoC_ResourceManager, "Mapping Resource ID to RFNoC_ResourceList");
+    LOG_DEBUG(RFNoC_ResourceManager, "Mapping RFNoC_ResourceList with ID " << newResourceList->getID() << " to RFNoC_ResourceList");
 
     this->idToList[newResourceList->getID()] = newResourceList;
+
+    LOG_DEBUG(RFNoC_ResourceManager, "Mapping Resource ID to RFNoC_ResourceList");
+
     this->resourceIdToList[resourceID] = newResourceList;
 
     LOG_DEBUG(RFNoC_ResourceManager, "Adding RFNoC_Resource to RFNoC_ResourceList");
@@ -233,6 +236,12 @@ bool RFNoC_ResourceManager::update()
             LOG_DEBUG(RFNoC_ResourceManager, "No connection, setting as RX streamer");
             usesResource->setRxStreamer(true);
         }
+    }
+
+    // Remove the remapped lists
+    for (std::map<std::string, RFNoC_ResourceList *>::iterator it = remappedLists.begin(); it != remappedLists.end();) {
+        this->idToList.erase(it->second->getID());
+        delete it->second;
     }
 
     return updatedAny;
