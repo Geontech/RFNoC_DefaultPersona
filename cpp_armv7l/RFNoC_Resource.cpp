@@ -105,6 +105,7 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
 
             LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding provides port with hash: " << hash);
 
+            this->providesHashes.push_back(hash);
             this->providesPorts.push_back(providesPort);
         }
 
