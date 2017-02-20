@@ -146,6 +146,8 @@ bool RFNoC_ResourceManager::update()
         }
 
         for (RFNoC_ListMap::iterator it2 = this->idToList.begin(); it2 != this->idToList.end(); ++it2) {
+            LOG_DEBUG(RFNoC_ResourceList, "Checking connection: " << updatedResourceList->getID() << " -> " << it2->second->getID());
+
             if (updatedResourceList->getID() == it2->second->getID()) {
                 LOG_DEBUG(RFNoC_ResourceManager, "Skipping check for connect for this resource list. Feedback not currently available.");
                 continue;
