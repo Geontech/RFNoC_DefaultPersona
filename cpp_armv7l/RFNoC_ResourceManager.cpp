@@ -63,15 +63,18 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
         return NULL;
     }
 
+    // Map the RFNoC_Resource
+    this->idToResource[resourceID] = rfNocResource;
+
+    // Instantiate the resource
     Resource_impl *resource = rfNocResource->instantiate(argc, argv, fnptr, libraryName);
 
     if (not resource) {
         LOG_ERROR(RFNoC_ResourceManager, "Failed to instantiate REDHAWK Resource");
+        delete rfNocResource;
+        this->idToResource.erase(resourceID);
         return NULL;
     }
-
-    // Map the RFNoC_Resource
-    this->idToResource[resourceID] = rfNocResource;
 
     return resource;
 }
