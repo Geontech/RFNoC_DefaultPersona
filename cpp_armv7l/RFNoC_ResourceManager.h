@@ -9,10 +9,13 @@
 #define RFNOC_RESOURCEMANAGER_H
 
 #include <ossie/debug.h>
+#include <ossie/Device_impl.h>
+#include <ossie/Resource_impl.h>
 #include <uhd/device3.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/graph.hpp>
 
+#include "RFNoC_Component.h"
 #include "RFNoC_Persona.h"
 
 // Forward declaration of other classes
