@@ -134,6 +134,10 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
     blockInfoCallback blockInfoCb = boost::bind(&RFNoC_ResourceManager::setBlockInfoMapping, this->resourceManager, _1, _2);
+    connectionCallback newIncomingConnectionCb = boost::bind(&RFNoC_Resource::newIncomingConnection, this, _1);
+    connectionCallback newOutgoingConnectionCb = boost::bind(&RFNoC_Resource::newOutgoingConnection, this, _1);
+    connectionCallback removedIncomingConnectionCb = boost::bind(&RFNoC_Resource::removedIncomingConnection, this, _1);
+    connectionCallback removedOutgoingConnectionCb = boost::bind(&RFNoC_Resource::removedOutgoingConnection, this, _1);
     setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetRxStreamer, this->resourceManager, _1, _2);
     setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetTxStreamer, this->resourceManager, _1, _2);
 
@@ -141,7 +145,7 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     bool failed = false;
 
     try {
-        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockInfoCb, setSetRxStreamerCb, setSetTxStreamerCb);
+        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockInfoCb, newIncomingConnection, newOutgoingConnectionCb, removedIncomingConnectionCb, removedOutgoingConnectionCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
         if (not rhResource) {
             LOG_ERROR(RFNoC_Resource, "Failed to instantiate RF-NoC resource");
@@ -213,6 +217,26 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     delete portSet;
 
     return this->rhResource;
+}
+
+void RFNoC_Resource::newIncomingConnection(const std::string &ID)
+{
+    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
+}
+
+void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
+{
+    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
+}
+
+void RFNoC_Resource::removedIncomingConnection(const std::string &ID)
+{
+    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
+}
+
+void RFNoC_Resource::removedOutgoingConnection(const std::string &ID)
+{
+    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 }
 
 void RFNoC_Resource::setRxStreamer(bool enable)
