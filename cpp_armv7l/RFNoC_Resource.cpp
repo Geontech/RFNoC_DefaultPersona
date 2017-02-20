@@ -160,14 +160,16 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID)
 
                     if (this->connectRadioRxCb(hash, providesBlockInfo.blockID, providesBlockInfo.port)) {
                         LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
-                        this->connectionIdToConnectionType[ID] = RADIO;
+                        this->streamIdToConnectionType[ID] = RADIO;
                     }
-                } else {
+                }
+
+                if (streamIdToConnectionType[ID] == NONE) {
                     LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");
 
                     setTxStreamer(true);
 
-                    this->connectionIdToConnectionType[ID] = STREAMER;
+                    this->streamIdToConnectionType[ID] = STREAMER;
                 }
 
                 return;
@@ -221,7 +223,9 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
                             LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to TX radio");
                             this->connectionIdToConnectionType[ID] = RADIO;
                         }
-                    } else {
+                    }
+
+                    if (this->connectionIdToConnectionType[ID] == NONE) {
                         LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as RX streamer");
 
                         setRxStreamer(true);
