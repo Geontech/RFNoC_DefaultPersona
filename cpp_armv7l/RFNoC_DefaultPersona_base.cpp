@@ -137,11 +137,27 @@ void RFNoC_DefaultPersona_base::loadProperties()
                 "external",
                 "property");
 
+    addProperty(block_allocation,
+                "block_allocation",
+                "",
+                "readwrite",
+                "",
+                "external",
+                "allocation");
+
     addProperty(hw_load_status,
                 hw_load_status_struct(),
                 "hw_load_status",
                 "",
                 "readonly",
+                "",
+                "external",
+                "property");
+
+    addProperty(blocks_status,
+                "blocks_status",
+                "",
+                "readwrite",
                 "",
                 "external",
                 "property");

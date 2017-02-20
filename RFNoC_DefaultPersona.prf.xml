@@ -51,4 +51,17 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
+  <simple id="block_allocation" mode="readwrite" type="string">
+    <kind kindtype="allocation"/>
+    <action type="external"/>
+  </simple>
+  <structsequence id="blocks_status" mode="readwrite">
+    <struct id="block_status">
+      <simple id="block_status::block_id" name="block" type="string"/>
+      <simple id="block_status::available" name="available" type="boolean">
+        <value>true</value>
+      </simple>
+    </struct>
+    <configurationkind kindtype="property"/>
+  </structsequence>
 </properties>

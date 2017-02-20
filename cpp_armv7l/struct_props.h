@@ -82,4 +82,52 @@ inline bool operator!= (const hw_load_status_struct& s1, const hw_load_status_st
     return !(s1==s2);
 }
 
+struct block_status_struct {
+    block_status_struct ()
+    {
+        available = true;
+    };
+
+    static std::string getId() {
+        return std::string("block_status");
+    };
+
+    std::string block;
+    bool available;
+};
+
+inline bool operator>>= (const CORBA::Any& a, block_status_struct& s) {
+    CF::Properties* temp;
+    if (!(a >>= temp)) return false;
+    const redhawk::PropertyMap& props = redhawk::PropertyMap::cast(*temp);
+    if (props.contains("block_status::block_id")) {
+        if (!(props["block_status::block_id"] >>= s.block)) return false;
+    }
+    if (props.contains("block_status::available")) {
+        if (!(props["block_status::available"] >>= s.available)) return false;
+    }
+    return true;
+}
+
+inline void operator<<= (CORBA::Any& a, const block_status_struct& s) {
+    redhawk::PropertyMap props;
+ 
+    props["block_status::block_id"] = s.block;
+ 
+    props["block_status::available"] = s.available;
+    a <<= props;
+}
+
+inline bool operator== (const block_status_struct& s1, const block_status_struct& s2) {
+    if (s1.block!=s2.block)
+        return false;
+    if (s1.available!=s2.available)
+        return false;
+    return true;
+}
+
+inline bool operator!= (const block_status_struct& s1, const block_status_struct& s2) {
+    return !(s1==s2);
+}
+
 #endif // STRUCTPROPS_H

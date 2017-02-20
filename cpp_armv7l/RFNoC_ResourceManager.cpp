@@ -154,15 +154,11 @@ bool RFNoC_ResourceManager::update()
                 // Merge the lists
                 updatedResourceList->merge(it2->second);
 
-                LOG_DEBUG(RFNoC_ResourceManager, "A");
-
                 std::vector<std::string> resourceIDs = it2->second->getIDs();
 
                 for (std::vector<std::string>::iterator idIt = resourceIDs.begin(); idIt != resourceIDs.end(); ++idIt) {
                     this->resourceIdToList[*idIt] = updatedResourceList;
                 }
-
-                LOG_DEBUG(RFNoC_ResourceManager, "B");
 
                 remappedLists[it2->second->getID()] = updatedResourceList;
 
@@ -172,17 +168,11 @@ bool RFNoC_ResourceManager::update()
         }
 
         if (foundConnection) {
-            LOG_DEBUG(RFNoC_ResourceManager, "C");
             it = updatedResourceLists.erase(it);
-            LOG_DEBUG(RFNoC_ResourceManager, "D");
         } else {
-            LOG_DEBUG(RFNoC_ResourceManager, "C2");
             ++it;
-            LOG_DEBUG(RFNoC_ResourceManager, "D2");
         }
     }
-
-    LOG_DEBUG(RFNoC_ResourceManager, "E");
 
     // Anything left should be connected to the radio or set as streamers
     for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourceLists.begin(); it != updatedResourceLists.end(); ++it) {
