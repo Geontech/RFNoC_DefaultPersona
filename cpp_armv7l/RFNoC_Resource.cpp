@@ -145,7 +145,7 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     bool failed = false;
 
     try {
-        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockInfoCb, newIncomingConnection, newOutgoingConnectionCb, removedIncomingConnectionCb, removedOutgoingConnectionCb, setSetRxStreamerCb, setSetTxStreamerCb);
+        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockInfoCb, newIncomingConnectionCb, newOutgoingConnectionCb, removedIncomingConnectionCb, removedOutgoingConnectionCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
         if (not rhResource) {
             LOG_ERROR(RFNoC_Resource, "Failed to instantiate RF-NoC resource");
