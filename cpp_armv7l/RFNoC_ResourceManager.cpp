@@ -147,7 +147,7 @@ bool RFNoC_ResourceManager::update()
             }
 
             if (updatedResourceList->connect(*it2->second)) {
-                LOG_DEBUG(RFNoC_ResourceManager, "Connected, merging");
+                LOG_DEBUG(RFNoC_ResourceManager, "Connected, merging: " << it2->second);
 
                 // Merge the lists
                 updatedResourceList->merge(it2->second);
