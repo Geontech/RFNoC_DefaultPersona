@@ -171,7 +171,7 @@ bool RFNoC_ResourceManager::update()
 
         if (foundConnection) {
             LOG_DEBUG(RFNoC_ResourceManager, "C");
-            updatedResourcesLists.erase(it);
+            it = updatedResourcesLists.erase(it);
             LOG_DEBUG(RFNoC_ResourceManager, "D");
         }
     }
