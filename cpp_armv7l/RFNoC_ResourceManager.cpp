@@ -59,7 +59,7 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
 
     LOG_DEBUG(RFNoC_ResourceManager, "Mapping Resource ID to RFNoC_ResourceList");
 
-    this->idToList[resourceID] = newResourceList->getID();
+    this->idToList[newResourceList->getID()] = newResourceList;
     this->resourceIdToList[resourceID] = newResourceList;
 
     LOG_DEBUG(RFNoC_ResourceManager, "Adding RFNoC_Resource to RFNoC_ResourceList");
