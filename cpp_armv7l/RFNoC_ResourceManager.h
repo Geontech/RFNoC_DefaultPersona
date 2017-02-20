@@ -14,7 +14,6 @@
 #include <uhd/rfnoc/graph.hpp>
 
 #include "RFNoC_Persona.h"
-#include "RFNoC_ResourceList.h"
 
 // Forward declaration of other classes
 class RFNoC_ResourceList;
@@ -28,25 +27,23 @@ class RFNoC_ResourceManager
 
         Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
         void removeResource(const std::string &resourceID);
-        bool update();
 
         BlockInfo getBlockInfoFromHash(const CORBA::ULong &hash) const;
         Device_impl* getParent() const { return this->parent; }
         uhd::device3::sptr getUsrp() { return this->usrp; }
 
         void setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos);
-        void setSetRxStreamer(const std::string &componentID, setStreamerCallback cb);
-        void setSetTxStreamer(const std::string &componentID, setStreamerCallback cb);
+        void setSetRxStreamer(const std::string &resourceID, setStreamerCallback cb);
+        void setSetTxStreamer(const std::string &resourceID, setStreamerCallback cb);
 
     protected:
-        typedef std::map<std::string, RFNoC_ResourceList *> RFNoC_ListMap;
+        typedef std::map<std::string, RFNoC_Resource *> RFNoC_ResourceMap;
 
         connectRadioRXCallback connectRadioRXCb;
         connectRadioTXCallback connectRadioTXCb;
         uhd::rfnoc::graph::sptr graph;
-        RFNoC_ListMap idToList;
+        RFNoC_ResourceMap idToResource;
         Device_impl *parent;
-        RFNoC_ListMap resourceIdToList;
         boost::mutex resourceLock;
         uhd::device3::sptr usrp;
 };

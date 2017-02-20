@@ -42,8 +42,6 @@ class RFNoC_Resource
         RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph, connectRadioRXCallback connectRadioRxCb, connectRadioTXCallback connectRadioTxCb);
         virtual ~RFNoC_Resource();
 
-        bool connect(const RFNoC_Resource &provides);
-        std::vector<std::string> getConnectionIDs() const;
         BlockInfo getProvidesBlock() const;
         std::vector<CORBA::ULong> getProvidesHashes() const;
         BlockInfo getUsesBlock() const;
@@ -56,21 +54,16 @@ class RFNoC_Resource
         void removedOutgoingConnection(const std::string &ID);
         void setRxStreamer(bool enable);
         void setTxStreamer(bool enable);
-        bool update();
+        //bool update();
 
-        bool operator==(const RFNoC_Resource &rhs) const;
+        //bool operator==(const RFNoC_Resource &rhs) const;
 
         void setBlockInfos(const std::vector<BlockInfo> &blockInfos);
         void setSetRxStreamer(setStreamerCallback cb);
         void setSetTxStreamer(setStreamerCallback cb);
 
     private:
-        typedef std::map<CORBA::ULong, std::vector<std::string> > hashToConnectionIDs;
-        typedef std::map<CORBA::ULong, std::vector<std::string> > hashToStreamIDs;
-        typedef std::pair<CORBA::ULong, CORBA::ULong> portHashPair;
-
         std::vector<BlockInfo> blockInfos;
-        std::vector<portHashPair> connected;
         std::map<std::string, ConnectionType> connectionIdToConnectionType;
         connectRadioRXCallback connectRadioRxCb;
         connectRadioTXCallback connectRadioTxCb;
@@ -78,13 +71,13 @@ class RFNoC_Resource
         std::string ID;
         bool isRxStreamer;
         bool isTxStreamer;
-        hashToStreamIDs providesHashToPreviousStreamIDs;
+        std::vector<CORBA::ULong> providesHashes;
         std::vector<BULKIO::ProvidesPortStatisticsProvider_ptr> providesPorts;
         RFNoC_ResourceManager *resourceManager;
         Resource_impl *rhResource;
         setStreamerCallback setRxStreamerCb;
         setStreamerCallback setTxStreamerCb;
-        hashToConnectionIDs usesHashToPreviousConnectionIDs;
+        std::map<std::string, ConnectionType> streamIdToConnectionType;
         std::vector<BULKIO::UsesPortStatisticsProvider_ptr> usesPorts;
 };
 

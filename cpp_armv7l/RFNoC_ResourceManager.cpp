@@ -24,7 +24,7 @@ RFNoC_ResourceManager::~RFNoC_ResourceManager()
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    for (RFNoC_ListMap::iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
+    for (RFNoC_ResourceMap::iterator it = this->idToResource.begin(); it != this->idToResource.end(); ++it) {
         delete it->second;
     }
 }
@@ -46,35 +46,28 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
 
     LOG_DEBUG(RFNoC_ResourceManager, "Adding Resource with ID: " << resourceID);
 
-    RFNoC_ListMap::iterator listMapIt = this->resourceIdToList.find(resourceID);
+    RFNoC_ResourceMap::iterator resourceMapIt = this->idToResource.find(resourceID);
 
-    if (listMapIt != this->resourceIdToList.end()) {
+    if (resourceMapIt != this->idToResource.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to add a Resource already tracked by the Resource Manager.");
         return NULL;
     }
 
-    LOG_DEBUG(RFNoC_ResourceManager, "Instantiating new RFNoC_ResourceList");
+    // Instantiate the resource
+    LOG_DEBUG(RFNoC_ResourceManager, "Instantiating new RFNoC_Resource");
 
-    RFNoC_ResourceList *newResourceList = new RFNoC_ResourceList(this, this->graph);
-
-    LOG_DEBUG(RFNoC_ResourceManager, "Mapping RFNoC_ResourceList with ID " << newResourceList->getID() << " to RFNoC_ResourceList");
-
-    this->idToList[newResourceList->getID()] = newResourceList;
-
-    LOG_DEBUG(RFNoC_ResourceManager, "Mapping Resource ID to RFNoC_ResourceList");
-
-    this->resourceIdToList[resourceID] = newResourceList;
-
-    LOG_DEBUG(RFNoC_ResourceManager, "Adding RFNoC_Resource to RFNoC_ResourceList");
-
-    Resource_impl *resource = newResourceList->addResource(argc, argv, fnptr, libraryName, resourceID);
+    RFNoC_Resource *resource = new RFNoC_Resource(resourceID, this, this->graph, this->connectRadioRXCb, this->connectRadioTXCb);
 
     if (not resource) {
-        LOG_ERROR(RFNoC_ResourceManager, "Failed to add new resource, cleaning up");
-        this->idToList.erase(newResourceList->getID());
-        delete newResourceList;
-        this->resourceIdToList.erase(resourceID);
+        LOG_ERROR(RFNoC_ResourceManager, "Failed to instantiate new RFNoC_Resource");
+        return NULL;
+    } else if (not resource->instantiate(argc, argv, fnptr, libraryName)) {
+        LOG_ERROR(RFNoC_ResourceManager, "Failed to instantiate REDHAWK Resource");
+        return NULL;
     }
+
+    // Map the RFNoC_Resource
+    this->idToResource[resourceID] = resource;
 
     return resource;
 }
@@ -87,29 +80,19 @@ void RFNoC_ResourceManager::removeResource(const std::string &resourceID)
 
     LOG_DEBUG(RFNoC_ResourceManager, "Removing Resource with ID: " << resourceID);
 
-    if (this->resourceIdToList.find(resourceID) == this->resourceIdToList.end()) {
+    if (this->idToResource.find(resourceID) == this->idToResource.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to remove a Resource not tracked by the Resource Manager");
         return;
     }
 
-    RFNoC_ResourceList *resourceList = this->resourceIdToList[resourceID];
-
-    LOG_DEBUG(RFNoC_ResourceManager, "Removing the Resource from the RFNoC_ResourceList");
-
-    resourceList->removeResource(resourceID);
-
-    if (resourceList->empty()) {
-        LOG_DEBUG(RFNoC_ResourceManager, "Deleting empty RFNoC_ResourceList from RFNoC_ResourceManager");
-        this->idToList.erase(resourceList->getID());
-        delete resourceList;
-    }
-
     LOG_DEBUG(RFNoC_ResourceManager, "Unmapping Resource from RFNoC_ResourceManager");
 
-    this->resourceIdToList.erase(resourceID);
+    delete this->idToResource[resourceID];
+
+    this->idToResource.erase(resourceID);
 }
 
-bool RFNoC_ResourceManager::update()
+/*bool RFNoC_ResourceManager::update()
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
@@ -247,15 +230,15 @@ bool RFNoC_ResourceManager::update()
     }
 
     return updatedAny;
-}
+}*/
 
 BlockInfo RFNoC_ResourceManager::getBlockInfoFromHash(const CORBA::ULong &hash) const
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    for (RFNoC_ListMap::const_iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
+    for (RFNoC_ResourceMap::const_iterator it = this->idToResource.begin(); it != this->idToResource.end(); ++it) {
         if (it->second->hasHash(hash)) {
-            return it->second->getProvidesResource()->getProvidesBlock();
+            return it->second->getProvidesBlock();
         }
     }
 
@@ -266,46 +249,46 @@ void RFNoC_ResourceManager::setBlockInfoMapping(const std::string &resourceID, c
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    RFNoC_ListMap::iterator it = this->resourceIdToList.find(resourceID);
+    RFNoC_ResourceMap::iterator it = this->idToResource.find(resourceID);
 
-    if (it == this->resourceIdToList.end()) {
+    if (it == this->idToResource.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to set Block ID for unknown Resource: " << resourceID);
         return;
     }
 
     LOG_DEBUG(RFNoC_ResourceManager, "Setting block IDs for Resource");
 
-    it->second->setBlockInfoMapping(resourceID, blockInfos);
+    it->second->setBlockInfos(blockInfos);
 }
 
 void RFNoC_ResourceManager::setSetRxStreamer(const std::string &resourceID, setStreamerCallback cb)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    RFNoC_ListMap::iterator it = this->resourceIdToList.find(resourceID);
+    RFNoC_ResourceMap::iterator it = this->idToResource.find(resourceID);
 
-    if (it == this->resourceIdToList.end()) {
+    if (it == this->idToResource.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to set setRxStreamer for unknown Resource: " << resourceID);
         return;
     }
 
     LOG_DEBUG(RFNoC_ResourceManager, "Setting setSetRxStreamer callback for Resource");
 
-    it->second->setSetRxStreamer(resourceID, cb);
+    it->second->setSetRxStreamer(cb);
 }
 
 void RFNoC_ResourceManager::setSetTxStreamer(const std::string &resourceID, setStreamerCallback cb)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
-    RFNoC_ListMap::iterator it = this->resourceIdToList.find(resourceID);
+    RFNoC_ResourceMap::iterator it = this->idToResource.find(resourceID);
 
-    if (it == this->resourceIdToList.end()) {
+    if (it == this->idToResource.end()) {
         LOG_WARN(RFNoC_ResourceManager, "Attempted to set setTxStreamer for unknown Resource: " << resourceID);
         return;
     }
 
     LOG_DEBUG(RFNoC_ResourceManager, "Setting setSetTxStreamer callback for Resource");
 
-    it->second->setSetTxStreamer(resourceID, cb);
+    it->second->setSetTxStreamer(cb);
 }
