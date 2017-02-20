@@ -18,7 +18,6 @@
 
 #include "entry_point.h"
 #include "RFNoC_Component.h"
-#include "RFNoC_ResourceList.h"
 #include "RFNoC_ResourceManager.h"
 #include "RFNoC_Utils.h"
 
