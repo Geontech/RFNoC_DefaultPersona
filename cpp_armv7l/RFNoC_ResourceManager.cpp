@@ -127,7 +127,7 @@ bool RFNoC_ResourceManager::update()
 
     std::map<std::string, RFNoC_ResourceList *> remappedLists;
 
-    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourceLists.begin(); it != updatedResourceLists.end(); ++it) {
+    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourceLists.begin(); it != updatedResourceLists.end();) {
         bool foundConnection = false;
         RFNoC_ResourceList *updatedResourceList = *it;
 
@@ -175,6 +175,10 @@ bool RFNoC_ResourceManager::update()
             LOG_DEBUG(RFNoC_ResourceManager, "C");
             it = updatedResourceLists.erase(it);
             LOG_DEBUG(RFNoC_ResourceManager, "D");
+        } else {
+            LOG_DEBUG(RFNoC_ResourceManager, "C2");
+            ++it;
+            LOG_DEBUG(RFNoC_ResourceManager, "D2");
         }
     }
 
