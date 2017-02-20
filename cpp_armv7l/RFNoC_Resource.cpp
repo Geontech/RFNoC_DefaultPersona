@@ -207,10 +207,11 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
 
             // This connection ID matches
             if (ID == connection.connectionId._ptr) {
-                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Found correct connection ID");
+                CORBA::ULong providesHash = connection.port._ptr->_hash(1024);
+                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Found correct connection ID with hash: " << providesHash);
 
                 // First ask the resource manager if it knows about the provides hash
-                BlockInfo providesBlockInfo = this->resourceManager->getBlockInfoFromHash(connection.port._ptr->_hash(1024));
+                BlockInfo providesBlockInfo = this->resourceManager->getBlockInfoFromHash(providesHash);
 
                 // If not, try connecting to the TX radio, and if that fails, set as a streamer
                 if (not uhd::rfnoc::block_id_t::is_valid_block_id(providesBlockInfo.blockID)) {
