@@ -34,11 +34,11 @@ BlockInfo RFNoC_Resource::getProvidesBlock() const
     return this->blockInfos.front();
 }
 
-std::vector<CORBA::ULong> RFNoC_Resource::getProvidesHashes() const
+std::vector<std::string> RFNoC_Resource::getProvidesStrings() const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return this->providesHashes;
+    return this->providesStrings;
 }
 
 BlockInfo RFNoC_Resource::getUsesBlock() const
@@ -48,11 +48,11 @@ BlockInfo RFNoC_Resource::getUsesBlock() const
     return this->blockInfos.back();
 }
 
-bool RFNoC_Resource::hasHash(CORBA::ULong hash) const
+bool RFNoC_Resource::hasString(std::string providesString) const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return (std::find(this->providesHashes.begin(), this->providesHashes.end(), hash) != this->providesHashes.end());
+    return (std::find(this->providesStrings.begin(), this->providesStrings.end(), providesString) != this->providesStrings.end());
 }
 
 Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
@@ -100,12 +100,14 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
 
         // Store the provides port hashes
         if (strstr(info.direction._ptr, "Provides") && strstr(info.repid._ptr, "BULKIO")) {
-            CORBA::ULong hash = info.obj_ptr->_hash(1024);
+            //CORBA::ULong hash = info.obj_ptr->_hash(1024);
             BULKIO::ProvidesPortStatisticsProvider_ptr providesPort = BULKIO::ProvidesPortStatisticsProvider::_narrow(this->rhResource->getPort(info.name._ptr));
 
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding provides port with hash: " << hash);
+            std::string portString = providesPort->_toString(providesPort);
 
-            this->providesHashes.push_back(hash);
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding provides port with string: " << portString);
+
+            this->providesStrings.push_back(portString);
             this->providesPorts.push_back(providesPort);
         }
 

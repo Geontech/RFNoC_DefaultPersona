@@ -42,9 +42,9 @@ class RFNoC_Resource
         virtual ~RFNoC_Resource();
 
         BlockInfo getProvidesBlock() const;
-        std::vector<CORBA::ULong> getProvidesHashes() const;
+        std::vector<std::string> getProvidesStrings() const;
         BlockInfo getUsesBlock() const;
-        bool hasHash(CORBA::ULong hash) const;
+        bool hasString(std::string portString) const;
         std::string id() const { return this->ID; }
         Resource_impl *instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
         void newIncomingConnection(const std::string &ID);
@@ -70,7 +70,7 @@ class RFNoC_Resource
         std::string ID;
         bool isRxStreamer;
         bool isTxStreamer;
-        std::vector<CORBA::ULong> providesHashes;
+        std::vector<std::string> providesStrings;
         std::vector<BULKIO::ProvidesPortStatisticsProvider_ptr> providesPorts;
         RFNoC_ResourceManager *resourceManager;
         Resource_impl *rhResource;
