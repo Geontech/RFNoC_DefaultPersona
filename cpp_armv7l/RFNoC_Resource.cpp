@@ -149,6 +149,8 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID)
         for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
             std::string streamID = statistics->streamIDs[j]._retn();
 
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Checking stream ID: " << streamID);
+
             // This connection ID matches
             if (ID == streamID) {
                 LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Found correct stream ID");
