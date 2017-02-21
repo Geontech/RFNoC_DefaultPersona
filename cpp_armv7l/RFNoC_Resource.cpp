@@ -34,11 +34,11 @@ BlockInfo RFNoC_Resource::getProvidesBlock() const
     return this->blockInfos.front();
 }
 
-std::vector<std::string> RFNoC_Resource::getProvidesStrings() const
+std::vector<CORBA::ULong> RFNoC_Resource::getProvidesHashes() const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return this->providesStrings;
+    return this->providesHashes;
 }
 
 BlockInfo RFNoC_Resource::getUsesBlock() const
@@ -48,11 +48,11 @@ BlockInfo RFNoC_Resource::getUsesBlock() const
     return this->blockInfos.back();
 }
 
-bool RFNoC_Resource::hasString(std::string providesString) const
+bool RFNoC_Resource::hasHash(CORBA::ULong hash) const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    return (std::find(this->providesStrings.begin(), this->providesStrings.end(), providesString) != this->providesStrings.end());
+    return (std::find(this->providesHashes.begin(), this->providesHashes.end(), hash) != this->providesHashes.end());
 }
 
 Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
@@ -100,14 +100,12 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
 
         // Store the provides port hashes
         if (strstr(info.direction._ptr, "Provides") && strstr(info.repid._ptr, "BULKIO")) {
-            //CORBA::ULong hash = info.obj_ptr->_hash(1024);
+            CORBA::ULong hash = info.obj_ptr->_hash(HASH_SIZE);
             BULKIO::ProvidesPortStatisticsProvider_ptr providesPort = BULKIO::ProvidesPortStatisticsProvider::_narrow(this->rhResource->getPort(info.name._ptr));
 
-            std::string portString = providesPort->_toString(providesPort);
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding provides port with hash: " << hash);
 
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Adding provides port with string: " << portString);
-
-            this->providesStrings.push_back(portString);
+            this->providesHashes.push_back(hash);
             this->providesPorts.push_back(providesPort);
         }
 
@@ -142,7 +140,7 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID)
 
     // Check all of the uses ports for the new connection ID
     for (size_t i = 0; i < this->providesPorts.size(); ++i) {
-        CORBA::ULong hash = this->providesPorts[i]->_hash(1024);
+        CORBA::ULong hash = this->providesPorts[i]->_hash(HASH_SIZE);
 
         LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Searching for new stream ID on port with hash: " << hash);
 
@@ -199,7 +197,7 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
 
     // Check all of the uses ports for the new connection ID
     for (size_t i = 0; i < this->usesPorts.size(); ++i) {
-        CORBA::ULong hash = this->usesPorts[i]->_hash(1024);
+        CORBA::ULong hash = this->usesPorts[i]->_hash(HASH_SIZE);
 
         LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Searching for new connection ID on port with hash: " << hash);
 
@@ -210,7 +208,7 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
 
             // This connection ID matches
             if (ID == connection.connectionId._ptr) {
-                CORBA::ULong providesHash = connection.port._ptr->_hash(1024);
+                CORBA::ULong providesHash = connection.port._ptr->_hash(HASH_SIZE);
                 LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Found correct connection ID with hash: " << providesHash);
 
                 // First ask the resource manager if it knows about the provides hash
