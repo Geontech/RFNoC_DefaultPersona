@@ -146,6 +146,8 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID)
 
         BULKIO::PortStatistics *statistics = this->providesPorts[i]->statistics();
 
+        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "There are " << statistics->streamIDs.length() << " stream IDs");
+
         for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
             std::string streamID = statistics->streamIDs[j]._retn();
 
