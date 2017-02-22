@@ -60,10 +60,10 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
     blockInfoCallback blockInfoCb = boost::bind(&RFNoC_ResourceManager::setBlockInfoMapping, this->resourceManager, _1, _2);
-    connectionCallback newIncomingConnectionCb = boost::bind(&RFNoC_Resource::newIncomingConnection, this, _1);
-    connectionCallback newOutgoingConnectionCb = boost::bind(&RFNoC_Resource::newOutgoingConnection, this, _1);
-    connectionCallback removedIncomingConnectionCb = boost::bind(&RFNoC_Resource::removedIncomingConnection, this, _1);
-    connectionCallback removedOutgoingConnectionCb = boost::bind(&RFNoC_Resource::removedOutgoingConnection, this, _1);
+    connectionCallback newIncomingConnectionCb = boost::bind(&RFNoC_Resource::newIncomingConnection, this, _1, _2);
+    connectionCallback newOutgoingConnectionCb = boost::bind(&RFNoC_Resource::newOutgoingConnection, this, _1, _2);
+    connectionCallback removedIncomingConnectionCb = boost::bind(&RFNoC_Resource::removedIncomingConnection, this, _1, _2);
+    connectionCallback removedOutgoingConnectionCb = boost::bind(&RFNoC_Resource::removedOutgoingConnection, this, _1, _2);
     setSetStreamerCallback setSetRxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetRxStreamer, this->resourceManager, _1, _2);
     setSetStreamerCallback setSetTxStreamerCb = boost::bind(&RFNoC_ResourceManager::setSetTxStreamer, this->resourceManager, _1, _2);
 
@@ -124,11 +124,11 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     return this->rhResource;
 }
 
-void RFNoC_Resource::newIncomingConnection(const std::string &ID)
+void RFNoC_Resource::newIncomingConnection(const std::string &ID, const CORBA::ULong &hash)
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "New incoming connection with stream ID: " << ID);
+    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "New incoming connection with stream ID " << ID << " and hash " << hash);
 
     // Make sure this isn't a duplicate
     if (this->streamIdToConnectionType.find(ID) != this->streamIdToConnectionType.end()) {
@@ -138,54 +138,28 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID)
 
     this->streamIdToConnectionType[ID] = NONE;
 
-    // Check all of the uses ports for the new connection ID
-    for (size_t i = 0; i < this->providesPorts.size(); ++i) {
-        CORBA::ULong hash = this->providesPorts[i]->_hash(HASH_SIZE);
+    // Try connecting to the RX radio, and if that fails, set as a streamer
+    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
 
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Searching for new stream ID on port with hash: " << hash);
+    if (this->connectRadioRxCb) {
+        BlockInfo providesBlockInfo = getProvidesBlock();
 
-        BULKIO::PortStatistics *statistics = this->providesPorts[i]->statistics();
-
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "There are " << statistics->streamIDs.length() << " stream IDs");
-
-        for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
-            std::string streamID = statistics->streamIDs[j]._retn();
-
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Checking stream ID: " << streamID);
-
-            // This connection ID matches
-            if (ID == streamID) {
-                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Found correct stream ID");
-
-                // Try connecting to the RX radio, and if that fails, set as a streamer
-                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
-
-                if (this->connectRadioRxCb) {
-                    BlockInfo providesBlockInfo = getProvidesBlock();
-
-                    if (this->connectRadioRxCb(hash, providesBlockInfo.blockID, providesBlockInfo.port)) {
-                        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
-                        this->streamIdToConnectionType[ID] = RADIO;
-                    }
-                }
-
-                if (streamIdToConnectionType[ID] == NONE) {
-                    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");
-
-                    setTxStreamer(true);
-
-                    this->streamIdToConnectionType[ID] = STREAMER;
-                }
-
-                return;
-            }
+        if (this->connectRadioRxCb(hash, providesBlockInfo.blockID, providesBlockInfo.port)) {
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
+            this->streamIdToConnectionType[ID] = RADIO;
         }
+    }
 
-        delete statistics;
+    if (streamIdToConnectionType[ID] == NONE) {
+        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");
+
+        setTxStreamer(true);
+
+        this->streamIdToConnectionType[ID] = STREAMER;
     }
 }
 
-void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
+void RFNoC_Resource::newOutgoingConnection(const std::string &ID, const CORBA::ULong &hash)
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
@@ -199,66 +173,77 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID)
 
     this->connectionIdToConnectionType[ID] = NONE;
 
-    // Check all of the uses ports for the new connection ID
+    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Searching for new connection ID on port with hash: " << hash);
+
+    BULKIO::UsesPortStatisticsProvider_ptr port;
+
     for (size_t i = 0; i < this->usesPorts.size(); ++i) {
-        CORBA::ULong hash = this->usesPorts[i]->_hash(HASH_SIZE);
+        CORBA::ULong otherHash = this->usesPorts[i]->_hash(HASH_SIZE);
 
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Searching for new connection ID on port with hash: " << hash);
+        if (hash == otherHash) {
+            port = this->usesPorts[i];
+            break;
+        }
+    }
 
-        ExtendedCF::UsesConnectionSequence *connections = usesPorts[i]->connections();
+    if (CORBA::is_nil(port)) {
+        LOG_WARN_ID(RFNoC_Resource, this->ID, "Could not find port with provided hash");
+        return;
+    }
 
-        for (size_t j = 0; j < connections->length(); ++j) {
-            ExtendedCF::UsesConnection connection = (*connections)[j];
+    ExtendedCF::UsesConnectionSequence *connections = port->connections();
 
-            // This connection ID matches
-            if (ID == connection.connectionId._ptr) {
-                CORBA::ULong providesHash = connection.port._ptr->_hash(HASH_SIZE);
-                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Found correct connection ID with hash: " << providesHash);
+    for (size_t j = 0; j < connections->length(); ++j) {
+        ExtendedCF::UsesConnection connection = (*connections)[j];
 
-                // First ask the resource manager if it knows about the provides hash
-                BlockInfo providesBlockInfo = this->resourceManager->getBlockInfoFromHash(providesHash);
+        // This connection ID matches
+        if (ID == connection.connectionId._ptr) {
+            CORBA::ULong providesHash = connection.port._ptr->_hash(HASH_SIZE);
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Found correct connection ID with hash: " << providesHash);
 
-                // If not, try connecting to the TX radio, and if that fails, set as a streamer
-                if (not uhd::rfnoc::block_id_t::is_valid_block_id(providesBlockInfo.blockID)) {
-                    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to TX Radio");
+            // First ask the resource manager if it knows about the provides hash
+            BlockInfo providesBlockInfo = this->resourceManager->getBlockInfoFromHash(providesHash);
 
-                    if (this->connectRadioTxCb) {
-                        BlockInfo usesBlockInfo = getUsesBlock();
+            // If not, try connecting to the TX radio, and if that fails, set as a streamer
+            if (not uhd::rfnoc::block_id_t::is_valid_block_id(providesBlockInfo.blockID)) {
+                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to TX Radio");
 
-                        if (this->connectRadioTxCb(ID, usesBlockInfo.blockID, usesBlockInfo.port)) {
-                            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to TX radio");
-                            this->connectionIdToConnectionType[ID] = RADIO;
-                        }
-                    }
-
-                    if (this->connectionIdToConnectionType[ID] == NONE) {
-                        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as RX streamer");
-
-                        setRxStreamer(true);
-
-                        this->connectionIdToConnectionType[ID] = STREAMER;
-                    }
-                }
-                // If so, connect to the provides RF-NoC block
-                else {
-                    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is managed by this RF-NoC Persona. Attempting to connect to " << providesBlockInfo.blockID.to_string());
-
+                if (this->connectRadioTxCb) {
                     BlockInfo usesBlockInfo = getUsesBlock();
 
-                    this->graph->connect(usesBlockInfo.blockID, usesBlockInfo.port, providesBlockInfo.blockID, providesBlockInfo.port);
-
-                    this->connectionIdToConnectionType[ID] = FABRIC;
+                    if (this->connectRadioTxCb(ID, usesBlockInfo.blockID, usesBlockInfo.port)) {
+                        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to TX radio");
+                        this->connectionIdToConnectionType[ID] = RADIO;
+                    }
                 }
 
-                return;
-            }
-        }
+                if (this->connectionIdToConnectionType[ID] == NONE) {
+                    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as RX streamer");
 
-        delete connections;
+                    setRxStreamer(true);
+
+                    this->connectionIdToConnectionType[ID] = STREAMER;
+                }
+            }
+            // If so, connect to the provides RF-NoC block
+            else {
+                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is managed by this RF-NoC Persona. Attempting to connect to " << providesBlockInfo.blockID.to_string());
+
+                BlockInfo usesBlockInfo = getUsesBlock();
+
+                this->graph->connect(usesBlockInfo.blockID, usesBlockInfo.port, providesBlockInfo.blockID, providesBlockInfo.port);
+
+                this->connectionIdToConnectionType[ID] = FABRIC;
+            }
+
+            break;
+        }
     }
+
+    delete connections;
 }
 
-void RFNoC_Resource::removedIncomingConnection(const std::string &ID)
+void RFNoC_Resource::removedIncomingConnection(const std::string &ID, const CORBA::ULong &hash)
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
@@ -286,7 +271,7 @@ void RFNoC_Resource::removedIncomingConnection(const std::string &ID)
     this->streamIdToConnectionType.erase(ID);
 }
 
-void RFNoC_Resource::removedOutgoingConnection(const std::string &ID)
+void RFNoC_Resource::removedOutgoingConnection(const std::string &ID, const CORBA::ULong &hash)
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
@@ -351,83 +336,6 @@ void RFNoC_Resource::setTxStreamer(bool enable)
         this->isTxStreamer = false;
     }
 }
-
-/*bool RFNoC_Resource::update()
-{
-    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
-
-    bool updated = false;
-
-    for (size_t i = 0; i < this->providesPorts.size(); ++i) {
-        BULKIO::ProvidesPortStatisticsProvider_ptr port = this->providesPorts[i];
-
-        if (not ossie::corba::objectExists(port)) {
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Port doesn't exist, skipping");
-            continue;
-        }
-
-        BULKIO::PortStatistics *statistics = port->statistics();
-        CORBA::ULong hash = port->_hash(1024);
-        std::vector<std::string> oldStreamIDs = this->providesHashToPreviousStreamIDs[hash];
-        std::vector<std::string> newStreamIDs;
-
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Checking stream IDs for provides port with hash: " << hash)
-
-        for (size_t j = 0; j < statistics->streamIDs.length(); ++j) {
-            newStreamIDs.push_back(statistics->streamIDs[j]._retn());
-        }
-
-        // For now we'll assume this is sufficient
-        // TODO: Make this more robust (perhaps cast the sequences to sets and do a diff)
-        if (oldStreamIDs != newStreamIDs) {
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Length of streamIDs has changed");
-            updated = true;
-        }
-
-        delete statistics;
-        this->providesHashToPreviousStreamIDs[hash] = newStreamIDs;
-    }
-
-    for (size_t i = 0; i < this->usesPorts.size(); ++i) {
-        BULKIO::UsesPortStatisticsProvider_ptr port = this->usesPorts[i];
-
-        if (not ossie::corba::objectExists(port)) {
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Port doesn't exist, skipping");
-            continue;
-        }
-
-        ExtendedCF::UsesConnectionSequence *connections = port->connections();
-        CORBA::ULong hash = port->_hash(1024);
-        std::vector<std::string> oldConnections = this->usesHashToPreviousConnectionIDs[hash];
-        std::vector<std::string> newConnections;
-
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Checking connections for uses port with hash: " << hash)
-
-        for (size_t j = 0; j < connections->length(); ++j) {
-            ExtendedCF::UsesConnection connection = (*connections)[j];
-            newConnections.push_back(connection.connectionId._ptr);
-        }
-
-        // For now we'll assume this is sufficient
-        // TODO: Make this more robust (perhaps cast the sequences to sets and do a diff)
-        if (oldConnections != newConnections) {
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Length of connections has changed");
-            updated = true;
-        }
-
-        delete connections;
-        this->usesHashToPreviousConnectionIDs[hash] = newConnections;
-    }
-
-    return updated;
-}*/
-
-/*bool RFNoC_Resource::operator==(const RFNoC_Resource &rhs) const
-{
-    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
-
-    return (this->blockInfos == rhs.blockInfos);
-}*/
 
 void RFNoC_Resource::setBlockInfos(const std::vector<BlockInfo> &blockInfos)
 {

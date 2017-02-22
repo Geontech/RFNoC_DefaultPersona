@@ -50,10 +50,10 @@ class RFNoC_Resource
         bool hasHash(CORBA::ULong hash) const;
         std::string id() const { return this->ID; }
         Resource_impl *instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
-        void newIncomingConnection(const std::string &ID);
-        void newOutgoingConnection(const std::string &ID);
-        void removedIncomingConnection(const std::string &ID);
-        void removedOutgoingConnection(const std::string &ID);
+        void newIncomingConnection(const std::string &ID, const CORBA::ULong &hash);
+        void newOutgoingConnection(const std::string &ID, const CORBA::ULong &hash);
+        void removedIncomingConnection(const std::string &ID, const CORBA::ULong &hash);
+        void removedOutgoingConnection(const std::string &ID, const CORBA::ULong &hash);
         void setRxStreamer(bool enable);
         void setTxStreamer(bool enable);
         //bool update();
