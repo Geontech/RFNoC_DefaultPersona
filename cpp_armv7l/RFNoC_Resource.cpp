@@ -139,7 +139,7 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID, const CORBA::U
     this->streamIdToConnectionType[ID] = NONE;
 
     // Try connecting to the RX radio, and if that fails, set as a streamer
-    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
+    /*LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
 
     if (this->connectRadioRxCb) {
         BlockInfo providesBlockInfo = getProvidesBlock();
@@ -151,12 +151,12 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID, const CORBA::U
     }
 
     if (streamIdToConnectionType[ID] == NONE) {
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");
+        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");*/
 
         setTxStreamer(true);
 
         this->streamIdToConnectionType[ID] = STREAMER;
-    }
+    //}
 }
 
 void RFNoC_Resource::newOutgoingConnection(const std::string &ID, const CORBA::ULong &hash)
