@@ -123,9 +123,15 @@ void RFNoC_ResourceManager::registerIncomingConnection(IncomingConnection connec
 
     boost::mutex::scoped_lock lock(this->connectionLock);
 
+    LOG_DEBUG(RFNoC_ResourceManager, "Got lock");
+
     this->pendingConnections.push_back(connection);
 
+    LOG_DEBUG(RFNoC_ResourceManager, "Pushed connection");
+
     this->connectionCondition.notify_one();
+
+    LOG_DEBUG(RFNoC_ResourceManager, "Notified");
 }
 
 void RFNoC_ResourceManager::setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos)

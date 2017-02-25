@@ -169,6 +169,8 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID, const CORBA::U
     connection.streamID = ID;
 
     this->resourceManager->registerIncomingConnection(connection);
+
+    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Registered incoming connection");
 }
 
 void RFNoC_Resource::newOutgoingConnection(const std::string &ID, const CORBA::ULong &hash)
