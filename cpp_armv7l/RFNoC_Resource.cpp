@@ -48,6 +48,31 @@ BlockInfo RFNoC_Resource::getUsesBlock() const
     return this->blockInfos.back();
 }
 
+void RFNoC_Resource::handleIncomingConnection(const std::string &streamID, const CORBA::ULong &portHash)
+{
+    LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
+
+    // Try connecting to the RX radio, and if that fails, set as a streamer
+    //LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
+
+    if (this->connectRadioRxCb) {
+        BlockInfo providesBlockInfo = getProvidesBlock();
+
+        if (this->connectRadioRxCb(portHash, providesBlockInfo.blockID, providesBlockInfo.port)) {
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
+            this->streamIdToConnectionType[ID] = RADIO;
+        }
+    }
+
+    if (streamIdToConnectionType[ID] == NONE) {
+        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");
+
+        setTxStreamer(true);
+
+        this->streamIdToConnectionType[ID] = STREAMER;
+    }
+}
+
 bool RFNoC_Resource::hasHash(CORBA::ULong hash) const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
@@ -138,25 +163,12 @@ void RFNoC_Resource::newIncomingConnection(const std::string &ID, const CORBA::U
 
     this->streamIdToConnectionType[ID] = NONE;
 
-    // Try connecting to the RX radio, and if that fails, set as a streamer
-    /*LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
+    IncomingConnection connection;
+    connection.portHash = hash;
+    connection.resourceID = this->ID;
+    connection.streamID = ID;
 
-    if (this->connectRadioRxCb) {
-        BlockInfo providesBlockInfo = getProvidesBlock();
-
-        if (this->connectRadioRxCb(hash, providesBlockInfo.blockID, providesBlockInfo.port)) {
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
-            this->streamIdToConnectionType[ID] = RADIO;
-        }
-    }
-
-    if (streamIdToConnectionType[ID] == NONE) {
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");*/
-
-        setTxStreamer(true);
-
-        this->streamIdToConnectionType[ID] = STREAMER;
-    //}
+    this->resourceManager->registerIncomingConnection(connection);
 }
 
 void RFNoC_Resource::newOutgoingConnection(const std::string &ID, const CORBA::ULong &hash)

@@ -47,6 +47,7 @@ class RFNoC_Resource
         BlockInfo getProvidesBlock() const;
         std::vector<CORBA::ULong> getProvidesHashes() const;
         BlockInfo getUsesBlock() const;
+        void handleIncomingConnection(const std::string &streamID, const CORBA::ULong &portHash);
         bool hasHash(CORBA::ULong hash) const;
         std::string id() const { return this->ID; }
         Resource_impl *instantiate(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -56,9 +57,6 @@ class RFNoC_Resource
         void removedOutgoingConnection(const std::string &ID, const CORBA::ULong &hash);
         void setRxStreamer(bool enable);
         void setTxStreamer(bool enable);
-        //bool update();
-
-        //bool operator==(const RFNoC_Resource &rhs) const;
 
         void setBlockInfos(const std::vector<BlockInfo> &blockInfos);
         void setSetRxStreamer(setStreamerCallback cb);

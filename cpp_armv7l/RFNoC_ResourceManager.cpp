@@ -17,12 +17,17 @@ RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
+    this->connectionThread = new boost::thread(boost::bind(&RFNoC_ResourceManager::connectionHandler, this));
     this->graph = this->usrp->create_graph("RFNoC_ResourceManager_" + ossie::generateUUID());
 }
 
 RFNoC_ResourceManager::~RFNoC_ResourceManager()
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
+
+    this->connectionCondition.notify_one();
+    this->connectionThread->join();
+    delete this->connectionThread;
 
     for (RFNoC_ResourceMap::iterator it = this->idToResource.begin(); it != this->idToResource.end(); ++it) {
         delete it->second;
@@ -99,146 +104,6 @@ void RFNoC_ResourceManager::removeResource(const std::string &resourceID)
     this->idToResource.erase(resourceID);
 }
 
-/*bool RFNoC_ResourceManager::update()
-{
-    LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
-
-    boost::mutex::scoped_lock lock(this->resourceLock);
-
-    bool updatedAny = false;
-    std::vector<RFNoC_ResourceList *> updatedResourceLists;
-
-    for (RFNoC_ListMap::iterator it = this->idToList.begin(); it != this->idToList.end(); ++it) {
-        bool updated = it->second->update();
-
-        if (updated) {
-            updatedResourceLists.push_back(it->second);
-        }
-
-        updatedAny |= updated;
-    }
-
-    std::map<std::string, RFNoC_ResourceList *> remappedLists;
-
-    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourceLists.begin(); it != updatedResourceLists.end();) {
-        bool foundConnection = false;
-        RFNoC_ResourceList *updatedResourceList = *it;
-
-        LOG_DEBUG(RFNoC_ResourceManager, "Got updatedResourceList, checking if it's in the map: " << updatedResourceList->getID());
-
-        std::map<std::string, RFNoC_ResourceList *>::iterator remappedIt = remappedLists.find(updatedResourceList->getID());
-
-        if (remappedIt != remappedLists.end()) {
-            LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that was remapped: " << remappedLists[updatedResourceList->getID()]->getID());
-            updatedResourceList = remappedLists[updatedResourceList->getID()];
-        } else {
-            LOG_DEBUG(RFNoC_ResourceManager, "Found a list to connect to that wasn't remapped");
-        }
-
-        for (RFNoC_ListMap::iterator it2 = this->idToList.begin(); it2 != this->idToList.end(); ++it2) {
-            LOG_DEBUG(RFNoC_ResourceManager, "Checking connection: " << updatedResourceList->getID() << " -> " << it2->second->getID());
-
-            if (updatedResourceList->getID() == it2->second->getID()) {
-                LOG_DEBUG(RFNoC_ResourceManager, "Skipping check for connect for this resource list. Feedback not currently available.");
-                continue;
-            }
-
-            if (updatedResourceList->connect(*it2->second)) {
-                LOG_DEBUG(RFNoC_ResourceManager, "Connected, merging: " << it2->second->getID());
-
-                // Merge the lists
-                updatedResourceList->merge(it2->second);
-
-                std::vector<std::string> resourceIDs = it2->second->getIDs();
-
-                for (std::vector<std::string>::iterator idIt = resourceIDs.begin(); idIt != resourceIDs.end(); ++idIt) {
-                    this->resourceIdToList[*idIt] = updatedResourceList;
-                }
-
-                remappedLists[it2->second->getID()] = updatedResourceList;
-
-                foundConnection = true;
-                break;
-            }
-        }
-
-        if (foundConnection) {
-            it = updatedResourceLists.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    // Anything left should be connected to the radio or set as streamers
-    for (std::vector<RFNoC_ResourceList *>::iterator it = updatedResourceLists.begin(); it != updatedResourceLists.end(); ++it) {
-        // TODO: Support updating the vector of RFNoC_Resources for multiple changes at once
-        RFNoC_ResourceList *updatedResourceList = *it;
-        RFNoC_Resource *providesResource = updatedResourceList->getProvidesResource();
-        RFNoC_Resource *usesResource = updatedResourceList->getUsesResource();
-
-        LOG_DEBUG(RFNoC_ResourceManager, "Got the resources");
-
-        // Try to connect to programmable device first
-        // RX Radio
-        std::vector<CORBA::ULong> providesHashes = providesResource->getProvidesHashes();
-        bool firstConnected = false;
-
-        LOG_DEBUG(RFNoC_ResourceManager, "Got the provides hashes");
-
-        for (size_t j = 0; j < providesHashes.size(); ++j) {
-            CORBA::ULong hash = providesHashes[j];
-
-            LOG_DEBUG(RFNoC_ResourceManager, "Checking provides hash: " << hash);
-
-            BlockInfo providesBlock = providesResource->getProvidesBlock();
-
-            if (this->connectRadioRXCb(hash, providesBlock.blockID, providesBlock.port)) {
-                LOG_DEBUG(RFNoC_ResourceManager, "Connection succeeded");
-                firstConnected = true;
-                break;
-            }
-        }
-
-        if (not firstConnected) {
-            LOG_DEBUG(RFNoC_ResourceManager, "No connection, setting as TX streamer");
-            providesResource->setTxStreamer(true);
-        }
-
-        // TX Radio
-        std::vector<std::string> connectionIDs = usesResource->getConnectionIDs();
-        bool lastConnected = false;
-
-        LOG_DEBUG(RFNoC_ResourceManager, "Got the connection IDs");
-
-        for (size_t j = 0; j < connectionIDs.size(); ++j) {
-            std::string connectionID = connectionIDs[j];
-
-            LOG_DEBUG(RFNoC_ResourceManager, "Checking connection ID: " << connectionID);
-
-            BlockInfo usesBlock = usesResource->getUsesBlock();
-
-            if (this->connectRadioTXCb(connectionID, usesBlock.blockID, usesBlock.port)) {
-                LOG_DEBUG(RFNoC_ResourceManager, "Connection succeeded");
-                lastConnected = true;
-                break;
-            }
-        }
-
-        if (not lastConnected) {
-            LOG_DEBUG(RFNoC_ResourceManager, "No connection, setting as RX streamer");
-            usesResource->setRxStreamer(true);
-        }
-    }
-
-    // Remove the remapped lists
-    for (std::map<std::string, RFNoC_ResourceList *>::iterator it = remappedLists.begin(); it != remappedLists.end(); ++it) {
-        this->idToList.erase(it->second->getID());
-        delete it->second;
-    }
-
-    return updatedAny;
-}*/
-
 BlockInfo RFNoC_ResourceManager::getBlockInfoFromHash(const CORBA::ULong &hash) const
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
@@ -250,6 +115,17 @@ BlockInfo RFNoC_ResourceManager::getBlockInfoFromHash(const CORBA::ULong &hash) 
     }
 
     return BlockInfo();
+}
+
+void RFNoC_ResourceManager::registerIncomingConnection(IncomingConnection connection)
+{
+    LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
+
+    boost::mutex::scoped_lock lock(this->connectionLock);
+
+    this->pendingConnections.push_back(connection);
+
+    this->connectionCondition.notify_one();
 }
 
 void RFNoC_ResourceManager::setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos)
@@ -298,4 +174,35 @@ void RFNoC_ResourceManager::setSetTxStreamer(const std::string &resourceID, setS
     LOG_DEBUG(RFNoC_ResourceManager, "Setting setSetTxStreamer callback for Resource");
 
     it->second->setSetTxStreamer(cb);
+}
+
+void RFNoC_ResourceManager::connectionHandler()
+{
+    LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
+
+    while (true) {
+        boost::mutex::scoped_lock lock(this->connectionLock);
+
+        if (boost::this_thread::interruption_requested()) {
+            return;
+        }
+
+        while (this->pendingConnections.empty()) {
+            this->connectionCondition.wait(lock);
+
+            if (boost::this_thread::interruption_requested()) {
+                return;
+            }
+        }
+
+        for (size_t i = 0; i < this->pendingConnections.size(); ++i) {
+            IncomingConnection connection = this->pendingConnections[i];
+
+            RFNoC_Resource *resource = this->idToResource[connection.resourceID];
+
+            resource->handleIncomingConnection(connection.streamID, connection.portHash);
+        }
+
+        this->pendingConnections.clear();
+    }
 }

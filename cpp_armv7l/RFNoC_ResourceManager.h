@@ -23,6 +23,12 @@
 // Forward declaration of other classes
 class RFNoC_Resource;
 
+struct IncomingConnection {
+    CORBA::ULong portHash;
+    std::string resourceID;
+    std::string streamID;
+};
+
 class RFNoC_ResourceManager
 {
     ENABLE_LOGGING
@@ -36,19 +42,27 @@ class RFNoC_ResourceManager
         BlockInfo getBlockInfoFromHash(const CORBA::ULong &hash) const;
         Device_impl* getParent() const { return this->parent; }
         uhd::device3::sptr getUsrp() { return this->usrp; }
+        void registerIncomingConnection(IncomingConnection connection);
 
         void setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos);
         void setSetRxStreamer(const std::string &resourceID, setStreamerCallback cb);
         void setSetTxStreamer(const std::string &resourceID, setStreamerCallback cb);
 
-    protected:
+    private:
+        void connectionHandler();
+
+    private:
         typedef std::map<std::string, RFNoC_Resource *> RFNoC_ResourceMap;
 
+        boost::condition_variable connectionCondition;
+        boost::mutex connectionLock;
+        boost::thread *connectionThread;
         connectRadioRXCallback connectRadioRXCb;
         connectRadioTXCallback connectRadioTXCb;
         uhd::rfnoc::graph::sptr graph;
         RFNoC_ResourceMap idToResource;
         Device_impl *parent;
+        std::vector<IncomingConnection> pendingConnections;
         boost::mutex resourceLock;
         uhd::device3::sptr usrp;
 };
