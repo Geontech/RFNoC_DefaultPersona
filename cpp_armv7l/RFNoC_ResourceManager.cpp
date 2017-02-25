@@ -209,10 +209,24 @@ void RFNoC_ResourceManager::connectionHandler()
             }
         }
 
-        LOG_DEBUG(RFNoC_ResourceManager, "Iterating over pending connections");
+        LOG_DEBUG(RFNoC_ResourceManager, "Copying over pending connections");
 
-        for (size_t i = 0; i < this->pendingConnections.size(); ++i) {
-            IncomingConnection connection = this->pendingConnections[i];
+        std::vector<IncomingConnection> copy = this->pendingConnections;
+
+        LOG_DEBUG(RFNoC_ResourceManager, "Clearing pending connections in connectionHandler");
+
+        this->pendingConnections.clear();
+
+        LOG_DEBUG(RFNoC_ResourceManager, "Cleared pending connections in connectionHandler");
+
+        LOG_DEBUG(RFNoC_ResourceManager, "Releasing lock");
+
+        lock.unlock();
+
+        LOG_DEBUG(RFNoC_ResourceManager, "Iterating over copy");
+
+        for (size_t i = 0; i < copy.size(); ++i) {
+            IncomingConnection connection = copy[i];
 
             RFNoC_Resource *resource = this->idToResource[connection.resourceID];
 
@@ -220,11 +234,5 @@ void RFNoC_ResourceManager::connectionHandler()
             resource->handleIncomingConnection(connection.streamID, connection.portHash);
             LOG_DEBUG(RFNoC_ResourceManager, "Handled incoming connection in connectionHandler");
         }
-
-        LOG_DEBUG(RFNoC_ResourceManager, "Clearing pending connections in connectionHandler");
-
-        this->pendingConnections.clear();
-
-        LOG_DEBUG(RFNoC_ResourceManager, "Cleared pending connections in connectionHandler");
     }
 }
