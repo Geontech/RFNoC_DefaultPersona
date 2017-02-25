@@ -25,6 +25,7 @@ RFNoC_ResourceManager::~RFNoC_ResourceManager()
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
+    this->connectionThread->interrupt();
     this->connectionCondition.notify_one();
     this->connectionThread->join();
     delete this->connectionThread;
