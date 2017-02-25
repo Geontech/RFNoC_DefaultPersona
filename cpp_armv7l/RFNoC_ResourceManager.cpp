@@ -187,28 +187,44 @@ void RFNoC_ResourceManager::connectionHandler()
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
     while (true) {
+        LOG_DEBUG(RFNoC_ResourceManager, "Before lock in connectionHandler");
+
         boost::mutex::scoped_lock lock(this->connectionLock);
 
+        LOG_DEBUG(RFNoC_ResourceManager, "After lock in connectionHandler");
+
         if (boost::this_thread::interruption_requested()) {
+            LOG_DEBUG(RFNoC_ResourceManager, "Interruption requested in connectionHandler");
             return;
         }
 
         while (this->pendingConnections.empty()) {
+            LOG_DEBUG(RFNoC_ResourceManager, "Empty, waiting in connectionHandler");
             this->connectionCondition.wait(lock);
+            LOG_DEBUG(RFNoC_ResourceManager, "Condition received in connectionHandler");
 
             if (boost::this_thread::interruption_requested()) {
+                LOG_DEBUG(RFNoC_ResourceManager, "Interruption requested in connectionHandler");
                 return;
             }
         }
+
+        LOG_DEBUG(RFNoC_ResourceManager, "Iterating over pending connections");
 
         for (size_t i = 0; i < this->pendingConnections.size(); ++i) {
             IncomingConnection connection = this->pendingConnections[i];
 
             RFNoC_Resource *resource = this->idToResource[connection.resourceID];
 
+            LOG_DEBUG(RFNoC_ResourceManager, "About to handle incoming connection in connectionHandler");
             resource->handleIncomingConnection(connection.streamID, connection.portHash);
+            LOG_DEBUG(RFNoC_ResourceManager, "Handled incoming connection in connectionHandler");
         }
 
+        LOG_DEBUG(RFNoC_ResourceManager, "Clearing pending connections in connectionHandler");
+
         this->pendingConnections.clear();
+
+        LOG_DEBUG(RFNoC_ResourceManager, "Cleared pending connections in connectionHandler");
     }
 }
