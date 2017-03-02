@@ -105,7 +105,7 @@ void RFNoC_ResourceManager::removeResource(const std::string &resourceID)
     this->idToResource.erase(resourceID);
 }
 
-BlockInfo RFNoC_ResourceManager::getBlockInfoFromHash(const CORBA::ULong &hash) const
+BlockInfo RFNoC_ResourceManager::getProvidesBlockInfoFromHash(const CORBA::ULong &hash) const
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 

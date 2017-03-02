@@ -214,7 +214,7 @@ BlockInfo RFNoC_DefaultPersona_i::getBlockInfoFromHash(const CORBA::ULong &portH
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
-    return this->resourceManager->getBlockInfoFromHash(portHash);
+    return this->resourceManager->getProvidesBlockInfoFromHash(portHash);
 }
 
 Resource_impl* RFNoC_DefaultPersona_i::generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName)
