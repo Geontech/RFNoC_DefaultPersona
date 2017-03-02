@@ -66,7 +66,7 @@ void RFNoC_Resource::handleIncomingConnection(const std::string &streamID, const
         uhd::rfnoc::block_ctrl_base::sptr providesBlockPtr = this->resourceManager->getUsrp()->get_block_ctrl(providesBlock.blockID);
 
         if (providesBlockPtr->list_upstream_nodes().count(providesBlock.port)) {
-            if (providesBlockPtr->list_upstream_nodes()[providesBlock.port]->unique_id() == block.blockID) {
+            if (providesBlockPtr->list_upstream_nodes().at(providesBlock.port).lock()->unique_id() == block.blockID) {
                 LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Already connected to block");
                 return;
             }
