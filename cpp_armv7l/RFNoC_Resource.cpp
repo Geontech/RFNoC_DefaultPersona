@@ -29,7 +29,7 @@ RFNoC_Resource::~RFNoC_Resource()
 
 bool RFNoC_Resource::connectedToPortWithHash(const CORBA::ULong &hash)
 {
-    return std::find(this->connectedPortHashes.begin(), this->connectedPortHashes.end(), hash);
+    return (std::find(this->connectedPortHashes.begin(), this->connectedPortHashes.end(), hash) != this->connectedPortHashes.end());
 }
 
 BlockInfo RFNoC_Resource::getProvidesBlock() const
