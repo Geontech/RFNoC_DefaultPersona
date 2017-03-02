@@ -27,6 +27,11 @@ RFNoC_Resource::~RFNoC_Resource()
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 }
 
+bool RFNoC_Resource::connectedToPortWithHash(const CORBA::ULong &hash)
+{
+    return std::find(this->connectedPortHashes.begin(), this->connectedPortHashes.end(), hash);
+}
+
 BlockInfo RFNoC_Resource::getProvidesBlock() const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
@@ -52,24 +57,32 @@ void RFNoC_Resource::handleIncomingConnection(const std::string &streamID, const
 {
     LOG_TRACE_ID(RFNoC_Resource, this->ID, __PRETTY_FUNCTION__);
 
-    // Try connecting to the RX radio, and if that fails, set as a streamer
-    //LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to RX Radio");
+    // Try connecting to a resource managed by this persona
+    BlockInfo block = this->resourceManager->getUsesBlockInfoFromHash(portHash);
 
-    if (this->connectRadioRxCb) {
-        BlockInfo providesBlockInfo = getProvidesBlock();
+    if (uhd::rfnoc::block_id_t::is_valid_block_id(block.blockID)) {
+        BlockInfo providesBlock = getProvidesBlock();
 
-        if (this->connectRadioRxCb(portHash, providesBlockInfo.blockID, providesBlockInfo.port)) {
-            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
-            this->streamIdToConnectionType[ID] = RADIO;
+        this->graph->connect(block.blockID, block.port, providesBlock.blockID, providesBlock.port);
+
+        this->streamIdToConnectionType[ID] = FABRIC;
+    } else {
+        if (this->connectRadioRxCb) {
+            BlockInfo providesBlockInfo = getProvidesBlock();
+
+            if (this->connectRadioRxCb(portHash, providesBlockInfo.blockID, providesBlockInfo.port)) {
+                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
+                this->streamIdToConnectionType[ID] = RADIO;
+            }
         }
-    }
 
-    if (streamIdToConnectionType[ID] == NONE) {
-        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");
+        if (streamIdToConnectionType[ID] == NONE) {
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Could not connect to TX radio. Setting as TX streamer");
 
-        setTxStreamer(true);
+            setTxStreamer(true);
 
-        this->streamIdToConnectionType[ID] = STREAMER;
+            this->streamIdToConnectionType[ID] = STREAMER;
+        }
     }
 }
 
@@ -247,6 +260,8 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID, const CORBA::U
 
                 this->graph->connect(usesBlockInfo.blockID, usesBlockInfo.port, providesBlockInfo.blockID, providesBlockInfo.port);
 
+                this->connectedPortHashes.push_back(providesHash);
+
                 this->connectionIdToConnectionType[ID] = FABRIC;
             }
 
@@ -307,6 +322,14 @@ void RFNoC_Resource::removedOutgoingConnection(const std::string &ID, const CORB
     } else if (this->connectionIdToConnectionType[ID] == STREAMER) {
         LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Connection was a streamer. Issue stream command...");
         setRxStreamer(false);
+    }
+
+    for (std::vector<CORBA::ULong>::iterator it = this->connectedPortHashes.begin(); it != this->connectedPortHashes.end();) {
+        if (*it == hash) {
+            it = this->connectedPortHashes.erase(it);
+        } else {
+            ++it;
+        }
     }
 
     // Unmap this connection ID

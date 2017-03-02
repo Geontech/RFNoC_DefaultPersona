@@ -118,6 +118,19 @@ BlockInfo RFNoC_ResourceManager::getBlockInfoFromHash(const CORBA::ULong &hash) 
     return BlockInfo();
 }
 
+BlockInfo RFNoC_ResourceManager::getUsesBlockInfoFromHash(const CORBA::ULong &hash) const
+{
+    LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
+
+    for (RFNoC_ResourceMap::const_iterator it = this->idToResource.begin(); it != this->idToResource.end(); ++it) {
+        if (it->second->connectedToPortWithHash(hash)) {
+            return it->second->getUsesBlock();
+        }
+    }
+
+    return BlockInfo();
+}
+
 void RFNoC_ResourceManager::registerIncomingConnection(IncomingConnection connection)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);

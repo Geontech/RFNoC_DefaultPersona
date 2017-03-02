@@ -39,8 +39,9 @@ class RFNoC_ResourceManager
         Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
         void removeResource(const std::string &resourceID);
 
-        BlockInfo getBlockInfoFromHash(const CORBA::ULong &hash) const;
+        BlockInfo getProvidesBlockInfoFromHash(const CORBA::ULong &hash) const;
         Device_impl* getParent() const { return this->parent; }
+        BlockInfo getUsesBlockInfoFromHash(const CORBA::ULong &hash) const;
         uhd::device3::sptr getUsrp() { return this->usrp; }
         void registerIncomingConnection(IncomingConnection connection);
 

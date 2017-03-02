@@ -44,6 +44,7 @@ class RFNoC_Resource
         RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph, connectRadioRXCallback connectRadioRxCb, connectRadioTXCallback connectRadioTxCb);
         virtual ~RFNoC_Resource();
 
+        bool connectedToPortWithHash(const CORBA::ULong &hash);
         BlockInfo getProvidesBlock() const;
         std::vector<CORBA::ULong> getProvidesHashes() const;
         BlockInfo getUsesBlock() const;
@@ -64,6 +65,7 @@ class RFNoC_Resource
 
     private:
         std::vector<BlockInfo> blockInfos;
+        std::vector<CORBA::ULong> connectedPortHashes;
         std::map<std::string, ConnectionType> connectionIdToConnectionType;
         connectRadioRXCallback connectRadioRxCb;
         connectRadioTXCallback connectRadioTxCb;
