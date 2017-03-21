@@ -18,6 +18,7 @@
 
 #include "entry_point.h"
 #include "RFNoC_Component.h"
+#include "RFNoC_Programmable.h"
 #include "RFNoC_ResourceManager.h"
 #include "RFNoC_Utils.h"
 
@@ -41,7 +42,7 @@ class RFNoC_Resource
 {
     ENABLE_LOGGING
     public:
-        RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph, connectRadioRXCallback connectRadioRxCb, connectRadioTXCallback connectRadioTxCb);
+        RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, RFNoC_Programmable *programmable, uhd::rfnoc::graph::sptr graph);
         virtual ~RFNoC_Resource();
 
         bool connectedToPortWithHash(const CORBA::ULong &hash);
@@ -67,12 +68,11 @@ class RFNoC_Resource
         std::vector<BlockInfo> blockInfos;
         std::vector<CORBA::ULong> connectedPortHashes;
         std::map<std::string, ConnectionType> connectionIdToConnectionType;
-        connectRadioRXCallback connectRadioRxCb;
-        connectRadioTXCallback connectRadioTxCb;
         uhd::rfnoc::graph::sptr graph;
         std::string ID;
         bool isRxStreamer;
         bool isTxStreamer;
+        RFNoC_Programmable *programmable;
         std::vector<CORBA::ULong> providesHashes;
         std::vector<BULKIO::ProvidesPortStatisticsProvider_ptr> providesPorts;
         RFNoC_ResourceManager *resourceManager;

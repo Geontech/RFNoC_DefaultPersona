@@ -28,7 +28,7 @@ distclean-local:
 include $(srcdir)/Makefile.am.ide
 lib_LTLIBRARIES = libRFNoC_DefaultPersona.la
 libRFNoC_DefaultPersona_la_SOURCES = $(redhawk_SOURCES_auto)
-libRFNoC_DefaultPersona_la_CXXFLAGS = -Wall $(PROJECTDEPS_CFLAGS) $(BOOST_CPPFLAGS) $(INTERFACEDEPS_CFLAGS) $(redhawk_INCLUDES_auto)
-libRFNoC_DefaultPersona_la_LDFLAGS = -Wall $(redhawk_LDFLAGS_auto) $(PROJECTDEPS_LIBS) $(INTERFACEDEPS_LIBS)
+libRFNoC_DefaultPersona_la_CXXFLAGS = -Wall $(PROJECTDEPS_CFLAGS) $(BOOST_CPPFLAGS) $(LIBRFNOCRH_LIBS) $(LIBUHD_LIBS) $(redhawk_INCLUDES_auto)
+libRFNoC_DefaultPersona_la_LDFLAGS = -Wall $(redhawk_LDFLAGS_auto) $(PROJECTDEPS_LIBS) $(LIBRFNOCRH_CFLAGS) $(LIBUHD_CFLAGS)
 libdir = $(prefix)/dev/devices/RFNoC_DefaultPersona/cpp_armv7l/.libs
 

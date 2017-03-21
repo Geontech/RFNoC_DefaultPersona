@@ -18,6 +18,7 @@
 #include "entry_point.h"
 #include "RFNoC_Component.h"
 #include "RFNoC_Persona.h"
+#include "RFNoC_Programmable.h"
 #include "RFNoC_Resource.h"
 
 // Forward declaration of other classes
@@ -33,7 +34,7 @@ class RFNoC_ResourceManager
 {
     ENABLE_LOGGING
     public:
-        RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, connectRadioRXCallback rxCb, connectRadioTXCallback txCb);
+        RFNoC_ResourceManager(Device_impl *parent, RFNoC_Programmable *programmable);
         ~RFNoC_ResourceManager();
 
         Resource_impl* addResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -42,7 +43,6 @@ class RFNoC_ResourceManager
         BlockInfo getProvidesBlockInfoFromHash(const CORBA::ULong &hash) const;
         Device_impl* getParent() const { return this->parent; }
         BlockInfo getUsesBlockInfoFromHash(const CORBA::ULong &hash) const;
-        uhd::device3::sptr getUsrp() { return this->usrp; }
         void registerIncomingConnection(IncomingConnection connection);
 
         void setBlockInfoMapping(const std::string &resourceID, const std::vector<BlockInfo> &blockInfos);
@@ -58,14 +58,12 @@ class RFNoC_ResourceManager
         boost::condition_variable connectionCondition;
         boost::mutex connectionLock;
         boost::thread *connectionThread;
-        connectRadioRXCallback connectRadioRXCb;
-        connectRadioTXCallback connectRadioTXCb;
         uhd::rfnoc::graph::sptr graph;
         RFNoC_ResourceMap idToResource;
         Device_impl *parent;
         std::vector<IncomingConnection> pendingConnections;
+        RFNoC_Programmable *programmable;
         boost::mutex resourceLock;
-        uhd::device3::sptr usrp;
 };
 
 #endif

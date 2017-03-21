@@ -7,7 +7,7 @@
 
 class RFNoC_DefaultPersona_i;
 
-class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
+class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base, public RFNoC_Persona
 {
     ENABLE_LOGGING
     public:
@@ -33,10 +33,6 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
                     throw ( CF::Device::InvalidState, CF::ExecutableDevice::InvalidProcess, CORBA::SystemException);
 
         BlockInfo getBlockInfoFromHash(const CORBA::ULong &portHash);
-        void setConnectRadioRXCallback(connectRadioRXCallback cb);
-        void setConnectRadioTXCallback(connectRadioTXCallback cb);
-        void setGetUsrp(getUsrpCallback cb);
-        void setHwLoadStatusCallback(hwLoadStatusCallback cb);
 
     protected:
         Resource_impl* generateResource(int argc, char* argv[], ConstructorPtr fnptr, const char* libraryName);
@@ -49,12 +45,8 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base
         void loadFilepathChanged(const std::string &oldValue, const std::string &newValue);
 
     private:
-        connectRadioRXCallback connectRadioRXCb;
-        connectRadioTXCallback connectRadioTXCb;
         bool enabled;
-        getUsrpCallback getUsrpCb;
         RFNoC_ResourceManager *resourceManager;
-        hwLoadStatusCallback hwLoadStatusCb;
 
         std::map<CF::ExecutableDevice::ProcessID_Type, std::string> pidToComponentID;
 };

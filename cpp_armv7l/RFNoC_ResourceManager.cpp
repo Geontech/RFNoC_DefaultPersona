@@ -9,16 +9,14 @@
 
 PREPARE_LOGGING(RFNoC_ResourceManager)
 
-RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, uhd::device3::sptr usrp, connectRadioRXCallback rxCb, connectRadioTXCallback txCb) :
-    connectRadioRXCb(rxCb),
-    connectRadioTXCb(txCb),
+RFNoC_ResourceManager::RFNoC_ResourceManager(Device_impl *parent, RFNoC_Programmable *programmable) :
     parent(parent),
-    usrp(usrp)
+    programmable(programmable)
 {
     LOG_TRACE(RFNoC_ResourceManager, __PRETTY_FUNCTION__);
 
     this->connectionThread = new boost::thread(boost::bind(&RFNoC_ResourceManager::connectionHandler, this));
-    this->graph = this->usrp->create_graph("RFNoC_ResourceManager_" + ossie::generateUUID());
+    this->graph = this->programmable->getUsrp()->create_graph("RFNoC_ResourceManager_" + ossie::generateUUID());
 }
 
 RFNoC_ResourceManager::~RFNoC_ResourceManager()
@@ -62,7 +60,7 @@ Resource_impl* RFNoC_ResourceManager::addResource(int argc, char* argv[], Constr
     // Instantiate the resource
     LOG_DEBUG(RFNoC_ResourceManager, "Instantiating new RFNoC_Resource");
 
-    RFNoC_Resource *rfNocResource = new RFNoC_Resource(resourceID, this, this->graph, this->connectRadioRXCb, this->connectRadioTXCb);
+    RFNoC_Resource *rfNocResource = new RFNoC_Resource(resourceID, this, this->programmable, this->graph);
 
     if (not rfNocResource) {
         LOG_ERROR(RFNoC_ResourceManager, "Failed to instantiate new RFNoC_Resource");

@@ -89,7 +89,7 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
 
     if (allocationSuccess and not this->enabled) {
         LOG_DEBUG(RFNoC_DefaultPersona_i, "Instantiating RF-NoC Resource Manager");
-        this->resourceManager = new RFNoC_ResourceManager(this, this->getUsrpCb(), this->connectRadioRXCb, this->connectRadioTXCb);
+        this->resourceManager = new RFNoC_ResourceManager(this, this->programmable);
         this->enabled = true;
     }
 
@@ -171,45 +171,6 @@ void RFNoC_DefaultPersona_i::terminate (CF::ExecutableDevice::ProcessID_Type pro
     RFNoC_DefaultPersona_persona_base::terminate(processId);
 }
 
-void RFNoC_DefaultPersona_i::setConnectRadioRXCallback(connectRadioRXCallback cb)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    this->connectRadioRXCb = cb;
-}
-
-void RFNoC_DefaultPersona_i::setConnectRadioTXCallback(connectRadioTXCallback cb)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    this->connectRadioTXCb = cb;
-}
-
-void RFNoC_DefaultPersona_i::setGetUsrp(getUsrpCallback cb)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    this->getUsrpCb = cb;
-}
-
-void RFNoC_DefaultPersona_i::setHwLoadStatusCallback(hwLoadStatusCallback cb)
-{
-    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
-
-    this->hwLoadStatusCb = cb;
-
-    // Let the programmable device know about this device's hardware status
-    hw_load_status_object hwLoadStatusObject;
-
-    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
-    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
-    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
-    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
-    hwLoadStatusObject.state = this->hw_load_status.state;
-
-    this->hwLoadStatusCb(this->_identifier, hwLoadStatusObject);
-}
-
 BlockInfo RFNoC_DefaultPersona_i::getBlockInfoFromHash(const CORBA::ULong &portHash)
 {
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
@@ -284,15 +245,4 @@ void RFNoC_DefaultPersona_i::loadFilepathChanged(const std::string &oldValue, co
     }
 
     this->hw_load_status.load_filepath = newValue;
-
-    // Let the programmable device know about this device's hardware status
-    hw_load_status_object hwLoadStatusObject;
-
-    hwLoadStatusObject.hardware_id = this->hw_load_status.hardware_id;
-    hwLoadStatusObject.load_filepath = this->hw_load_status.load_filepath;
-    hwLoadStatusObject.request_id = this->hw_load_status.request_id;
-    hwLoadStatusObject.requester_id = this->hw_load_status.requester_id;
-    hwLoadStatusObject.state = this->hw_load_status.state;
-
-    this->hwLoadStatusCb(this->_identifier, hwLoadStatusObject);
 }

@@ -9,13 +9,12 @@
 
 PREPARE_LOGGING(RFNoC_Resource)
 
-RFNoC_Resource::RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, uhd::rfnoc::graph::sptr graph, connectRadioRXCallback connectRadioRxCb, connectRadioTXCallback connectRadioTxCb) :
-    connectRadioRxCb(connectRadioRxCb),
-    connectRadioTxCb(connectRadioTxCb),
+RFNoC_Resource::RFNoC_Resource(std::string resourceID, RFNoC_ResourceManager *resourceManager, RFNoC_Programmable *programmable, uhd::rfnoc::graph::sptr graph) :
     graph(graph),
     ID(resourceID),
     isRxStreamer(false),
     isTxStreamer(false),
+    programmable(programmable),
     resourceManager(resourceManager),
     rhResource(NULL)
 {
@@ -63,7 +62,7 @@ void RFNoC_Resource::handleIncomingConnection(const std::string &streamID, const
     if (uhd::rfnoc::block_id_t::is_valid_block_id(block.blockID)) {
         BlockInfo providesBlock = getProvidesBlock();
 
-        uhd::rfnoc::block_ctrl_base::sptr providesBlockPtr = this->resourceManager->getUsrp()->get_block_ctrl(providesBlock.blockID);
+        uhd::rfnoc::block_ctrl_base::sptr providesBlockPtr = this->programmable->getUsrp()->get_block_ctrl(providesBlock.blockID);
 
         if (providesBlockPtr->list_upstream_nodes().count(providesBlock.port)) {
             if (providesBlockPtr->list_upstream_nodes().at(providesBlock.port).lock()->unique_id() == block.blockID.get()) {
@@ -76,13 +75,11 @@ void RFNoC_Resource::handleIncomingConnection(const std::string &streamID, const
 
         this->streamIdToConnectionType[ID] = FABRIC;
     } else {
-        if (this->connectRadioRxCb) {
-            BlockInfo providesBlockInfo = getProvidesBlock();
+        BlockInfo providesBlockInfo = getProvidesBlock();
 
-            if (this->connectRadioRxCb(portHash, providesBlockInfo.blockID, providesBlockInfo.port)) {
-                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
-                this->streamIdToConnectionType[ID] = RADIO;
-            }
+        if (this->programmable->connectRadioRX(portHash, providesBlockInfo)) {
+            LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to RX radio");
+            this->streamIdToConnectionType[ID] = RADIO;
         }
 
         if (streamIdToConnectionType[ID] == NONE) {
@@ -118,7 +115,7 @@ Resource_impl* RFNoC_Resource::instantiate(int argc, char* argv[], ConstructorPt
     bool failed = false;
 
     try {
-        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->resourceManager->getUsrp(), blockInfoCb, newIncomingConnectionCb, newOutgoingConnectionCb, removedIncomingConnectionCb, removedOutgoingConnectionCb, setSetRxStreamerCb, setSetTxStreamerCb);
+        this->rhResource = fnptr(argc, argv, this->resourceManager->getParent(), this->programmable->getUsrp(), blockInfoCb, newIncomingConnectionCb, newOutgoingConnectionCb, removedIncomingConnectionCb, removedOutgoingConnectionCb, setSetRxStreamerCb, setSetTxStreamerCb);
 
         if (not rhResource) {
             LOG_ERROR(RFNoC_Resource, "Failed to instantiate RF-NoC resource");
@@ -244,13 +241,11 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID, const CORBA::U
             if (not uhd::rfnoc::block_id_t::is_valid_block_id(providesBlockInfo.blockID)) {
                 LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Provides port for this connection is not managed by this RF-NoC Persona. Attempting to connect to TX Radio");
 
-                if (this->connectRadioTxCb) {
-                    BlockInfo usesBlockInfo = getUsesBlock();
+                BlockInfo usesBlockInfo = getUsesBlock();
 
-                    if (this->connectRadioTxCb(ID, usesBlockInfo.blockID, usesBlockInfo.port)) {
-                        LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to TX radio");
-                        this->connectionIdToConnectionType[ID] = RADIO;
-                    }
+                if (this->programmable->connectRadioTX(ID, usesBlockInfo)) {
+                    LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected to TX radio");
+                    this->connectionIdToConnectionType[ID] = RADIO;
                 }
 
                 if (this->connectionIdToConnectionType[ID] == NONE) {
