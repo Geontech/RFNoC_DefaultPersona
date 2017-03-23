@@ -60,7 +60,7 @@ void RFNoC_DefaultPersona_i::constructor()
     LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
 
     // Set the hardware load status property
-    this->hw_load_status.hardware_id = "E310";
+    this->hw_load_status.hardware_id = "xc7z020clg484-1";
     this->hw_load_status.load_filepath = this->loadFilepath;
     this->hw_load_status.request_id = "";
     this->hw_load_status.requester_id = "";
