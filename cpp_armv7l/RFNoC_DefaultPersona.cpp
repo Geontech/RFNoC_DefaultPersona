@@ -93,8 +93,6 @@ CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& ca
         this->enabled = true;
     }
 
-    this->_usageState = updateUsageState();
-
     return allocationSuccess;
 }
 
@@ -111,8 +109,6 @@ void RFNoC_DefaultPersona_i::deallocateCapacity(const CF::Properties& capacities
     this->enabled = false;
 
     attemptToUnprogramParent();
-
-    this->_usageState = updateUsageState();
 }
 
 CF::ExecutableDevice::ProcessID_Type RFNoC_DefaultPersona_i::execute (const char* name, const CF::Properties& options, const CF::Properties& parameters)
