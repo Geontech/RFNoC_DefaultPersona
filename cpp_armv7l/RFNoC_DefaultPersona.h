@@ -19,6 +19,9 @@ class RFNoC_DefaultPersona_i : public RFNoC_DefaultPersona_persona_base, public 
 
         void constructor();
 
+        // Override releaseObject
+        void releaseObject() throw (CF::LifeCycle::ReleaseError, CORBA::SystemException);
+
         int serviceFunction() { return FINISH; }
         CORBA::Boolean allocateCapacity(const CF::Properties& capacities) 
             throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::InsufficientCapacity, CORBA::SystemException);

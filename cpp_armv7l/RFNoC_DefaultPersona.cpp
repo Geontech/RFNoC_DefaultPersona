@@ -73,6 +73,67 @@ void RFNoC_DefaultPersona_i::constructor()
     this->start();
 }
 
+// Override releaseObject
+void RFNoC_DefaultPersona_i::releaseObject() throw (CF::LifeCycle::ReleaseError, CORBA::SystemException)
+{
+    LOG_TRACE(RFNoC_DefaultPersona_i, __PRETTY_FUNCTION__);
+
+    // Terminate all children that were executed_
+    std::map<CF::ExecutableDevice::ProcessID_Type, std::string>::iterator iter;
+    for (iter = this->pidToComponentID.begin(); iter != this->pidToComponentID.end(); iter++) {
+        this->terminate(iter->first);
+    }
+
+    // This function clears the device running condition so main shuts down everything
+    try {
+        stop();
+    } catch (CF::Resource::StopError& ex) {
+        // TODO - this should probably be logged instead of ignored
+    }
+
+    // SR:419
+    LOG_DEBUG(RFNoC_DefaultPersona_i, "Receive releaseObject call");
+    if (this->_adminState == CF::Device::UNLOCKED) {
+        LOG_DEBUG(RFNoC_DefaultPersona_i, "Releasing Device")
+        setAdminState(CF::Device::SHUTTING_DOWN);
+
+        // SR:418
+        if (!CORBA::is_nil(this->_aggregateDevice)) {
+            try {
+                this->_aggregateDevice->removeDevice(this->_this());
+            } catch (...) {
+            }
+        }
+
+        // SR:420
+        setAdminState(CF::Device::LOCKED);
+        try {
+            // SR:422
+            LOG_DEBUG(RFNoC_DefaultPersona_i, "Unregistering Device")
+            this->_deviceManager->unregisterDevice(this->_this());
+        } catch (...) {
+            // SR:423
+            throw CF::LifeCycle::ReleaseError();
+        }
+        LOG_DEBUG(RFNoC_DefaultPersona_i, "Done Releasing Device")
+    }
+
+    RH_NL_DEBUG("Device", "Clean up IDM_CHANNEL. DEV-ID:"  << _identifier );
+    if ( idm_publisher )  idm_publisher.reset();
+    delete this->_devMgr;
+    this->_devMgr=NULL;
+
+    releasePorts();
+    stopPropertyChangeMonitor();
+    // This is a singleton shared by all code running in this process
+    //redhawk::events::Manager::Terminate();
+    PortableServer::POA_ptr root_poa = ossie::corba::RootPOA();
+    PortableServer::ObjectId_var oid = root_poa->servant_to_id(this);
+    root_poa->deactivate_object(oid);
+
+    component_running.signal();
+}
+
 CORBA::Boolean RFNoC_DefaultPersona_i::allocateCapacity(const CF::Properties& capacities)
         throw (CF::Device::InvalidState, CF::Device::InvalidCapacity, CF::Device::InsufficientCapacity, CORBA::SystemException) 
 {
