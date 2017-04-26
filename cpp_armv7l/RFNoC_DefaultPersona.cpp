@@ -120,8 +120,7 @@ void RFNoC_DefaultPersona_i::releaseObject() throw (CF::LifeCycle::ReleaseError,
 
     RH_NL_DEBUG("Device", "Clean up IDM_CHANNEL. DEV-ID:"  << _identifier );
     if ( idm_publisher )  idm_publisher.reset();
-    delete this->_devMgr;
-    this->_devMgr=NULL;
+    delete this->getDeviceManager(); // Somewhat evil
 
     releasePorts();
     stopPropertyChangeMonitor();
