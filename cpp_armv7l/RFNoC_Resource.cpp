@@ -267,6 +267,8 @@ void RFNoC_Resource::newOutgoingConnection(const std::string &ID, const CORBA::U
                 this->connectedPortHashes.push_back(providesHash);
 
                 this->connectionIdToConnectionType[ID] = FABRIC;
+
+                LOG_DEBUG_ID(RFNoC_Resource, this->ID, "Successfully connected");
             }
 
             break;
