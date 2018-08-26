@@ -23,6 +23,8 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires:  redhawk-devel >= 2.0
 Requires:       redhawk >= 2.0
 
+BuildRequires:  RFNoC_RH-devel
+Requires:       RFNoC_RH
 
 
 %description
@@ -60,7 +62,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,redhawk,redhawk,-)
-%dir %{_prefix}/dev/devices/RFNoC_DefaultPersona
+%dir %{_sdrroot}/dev/devices/RFNoC_DefaultPersona
 %{_prefix}/dev/devices/RFNoC_DefaultPersona/RFNoC_DefaultPersona.scd.xml
 %{_prefix}/dev/devices/RFNoC_DefaultPersona/RFNoC_DefaultPersona.prf.xml
 %{_prefix}/dev/devices/RFNoC_DefaultPersona/RFNoC_DefaultPersona.spd.xml
