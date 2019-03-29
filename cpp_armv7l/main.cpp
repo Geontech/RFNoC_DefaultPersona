@@ -45,6 +45,7 @@ extern "C" {
             return NULL;
         }
 
+        devicePtr->setParentDevice(dynamic_cast<Device_impl*>(programmable));
         rfNocPersonaPtr->setProgrammable(programmable);
         programmable->setPersonaMapping(devicePtr->_identifier, rfNocPersonaPtr);
 
